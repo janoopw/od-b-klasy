@@ -142,6 +142,13 @@ const leagueLevels=[
  ]},
  {name:"IV liga Mazowiecka",teams:[
   {name:"Legia II Warszawa",strength:62,salary:2600},{name:"Polonia Warszawa II",strength:64,salary:2800},{name:"MKS Piaseczno",strength:63,salary:2700},{name:"Hutnik Warszawa",strength:65,salary:3000},{name:"Ząbkovia Ząbki",strength:61,salary:2500},{name:"Mazur Karczew",strength:60,salary:2350},{name:"Świt II Nowy Dwór",strength:66,salary:3200},{name:"Wisła II Płock",strength:67,salary:3400}
+ ]},
+ {name:"Ekstraklasa",teams:[
+  {name:"Górnik Zabrze",strength:82,salary:15000},{name:"Legia Warszawa",strength:81,salary:15500},{name:"Lech Poznań",strength:81,salary:16000},{name:"Zagłębie Lubin",strength:77,salary:12500},
+  {name:"Wisła Kraków",strength:76,salary:12000},{name:"Piast Gliwice",strength:75,salary:10500},{name:"Pogoń Szczecin",strength:75,salary:11500},{name:"Jagiellonia Białystok",strength:76,salary:11500},
+  {name:"Korona Kielce",strength:73,salary:9000},{name:"GKS Katowice",strength:72,salary:8500},{name:"Widzew Łódź",strength:74,salary:9500},{name:"Cracovia",strength:73,salary:9000},
+  {name:"Wisła Płock",strength:71,salary:8000},{name:"Radomiak Radom",strength:70,salary:7800},{name:"Śląsk Wrocław",strength:70,salary:7600},{name:"Wieczysta Kraków",strength:72,salary:8500},
+  {name:"Motor Lublin",strength:69,salary:7200},{name:"Raków Częstochowa",strength:80,salary:13500}
  ]}
 ];
 const clubs=leagueLevels.flatMap((l,level)=>l.teams.map(t=>({...t,level,league:l.name})));
@@ -149,8 +156,7 @@ const leagueTeams=leagueLevels[0].teams.map(t=>t.name);
 let g=null;
 function getLeague(){return leagueLevels[g?.leagueLevel??0]||leagueLevels[0]}
 function getLeagueTeamNames(){
- const names=getLeague().teams.map(t=>t.name).filter(n=>n!==g.club.name);
- return [g.club.name,...names.slice(0,7)];
+ return getLeague().teams.map(t=>t.name);
 }
 function getClubData(name){return clubs.find(c=>c.name===name)||{name,strength:45,salary:900,level:g?.leagueLevel??0,league:getLeague().name}}
 
@@ -168,8 +174,9 @@ function go(page){
 }
 function makeSchedule(){
  const pool=getLeagueTeamNames().filter(x=>x!==g.club.name);
- const opponents=pool.slice(0,7);
- g.schedule=opponents.map((opp,i)=>({round:i+1,opponent:opp,home:i%2===0,played:false,result:null,goalsFor:0,goalsAgainst:0,performance:null}));
+ const firstLeg=pool.map((opp,i)=>({round:i+1,opponent:opp,home:i%2===0,played:false,result:null,goalsFor:0,goalsAgainst:0,performance:null}));
+ const secondLeg=pool.map((opp,i)=>({round:pool.length+i+1,opponent:opp,home:i%2!==0,played:false,result:null,goalsFor:0,goalsAgainst:0,performance:null}));
+ g.schedule=[...firstLeg,...secondLeg];
 }
 function startGame(){
  const age=+document.getElementById("age").value, pos=document.getElementById("pos").value;
@@ -230,10 +237,10 @@ function renderSchedule(){
  }).join("");
 }
 function simulateOtherGames(){
- // Small deterministic-ish simulation: only the player's match is tied to his result.
+ // Symulujemy pozostałe mecze kolejki. Pomijamy zarówno gracza, jak i jego aktualnego rywala.
  g.table=getLeagueTeamNames().map(name=>g.table?.find(x=>x.name===name)||{name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0});
- // Each round, simulate 3 neutral fixtures among non-player teams.
- const others=g.table.filter(t=>t.name!==g.club.name);
+ const current=currentMatch();
+ const others=g.table.filter(t=>t.name!==g.club.name && t.name!==current?.opponent);
  for(let i=0;i<Math.floor(others.length/2);i++){
   const a=others[(g.round+i*2)%others.length],b=others[(g.round+i*2+1)%others.length];
   const sa=rnd(0,3),sb=rnd(0,3);a.m++;b.m++;a.gf+=sa;a.ga+=sb;b.gf+=sb;b.ga+=sa;
@@ -296,8 +303,10 @@ function finishSeason(){
  const pos=table.findIndex(x=>x.name===g.club.name)+1;
  const avgRating=g.apps?g.ratingSum/g.apps:0;
  const oldLeague=getLeague().name;
+ const teamCount=getLeague().teams.length;
+ const relegationCut=teamCount>=18?16:7;
  let promoted=pos<=2 && g.leagueLevel<leagueLevels.length-1;
- let relegated=pos>=7 && g.leagueLevel>0;
+ let relegated=pos>=relegationCut && g.leagueLevel>0;
  let report=`<h3>🏆 ${g.season}</h3><p><b>${oldLeague}</b> • zakończyłeś sezon na <b>${pos}. miejscu</b>. Średnia ocena: <b>${avgRating.toFixed(2)}</b>. Mecze: ${g.apps}, gole: ${g.goals}, asysty: ${g.assists}.</p>`;
  if(promoted){
    g.leagueLevel++; g.club.level=g.leagueLevel; g.club.league=getLeague().name; g.club.strength=Math.min(70,g.club.strength+3); g.club.salary=Math.round(g.club.salary*1.15);
@@ -430,12 +439,12 @@ function renderForm(){
  if(!g.history.length){el.innerHTML="<p class='muted'>Jeszcze nie rozegrałeś meczu.</p>";return}
  el.innerHTML=g.history.slice(0,5).map(x=>`<div class="row"><div><div class="rowTitle">${x.gf}:${x.ga} vs ${esc(x.opp)}</div><div class="rowSub">${x.minutes} min • ⚽ ${x.goals} • 🅰️ ${x.assists}</div></div><b>${x.rating}</b></div>`).join("");
 }
-function saveGame(){localStorage.setItem("odBKlasy051",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
+function saveGame(){localStorage.setItem("odBKlasy06",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
 function loadGame(){
- const x=localStorage.getItem("odBKlasy051")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
+ const x=localStorage.getItem("odBKlasy06")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
  g=JSON.parse(x);g.leagueLevel=g.leagueLevel??(g.club?.level??0);g.club={...getClubData(g.club?.name||"KS Wesoła"),...g.club,level:g.leagueLevel,league:(leagueLevels[g.leagueLevel]||leagueLevels[0]).name};g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;g.interests=g.interests??[];g.offers=g.offers??[];document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
 }
-function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy051");localStorage.removeItem("odBKlasy05");localStorage.removeItem("odBKlasy04");localStorage.removeItem("odBKlasy03");location.reload()}}
+function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy06");localStorage.removeItem("odBKlasy05");localStorage.removeItem("odBKlasy04");localStorage.removeItem("odBKlasy03");location.reload()}}
 function openModal(content){document.getElementById("modalBox").innerHTML=content;document.getElementById("modal").classList.remove("hidden")}
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
