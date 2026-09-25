@@ -1,3 +1,10 @@
-Od B-klasy — World 1.9.5
+# Od B-klasy — World 1.9.7
 
-Nowe: poprawione miejsca w podsumowaniu sezonu (brak „0. miejsca”), stabilniejsze morale i zaufanie trenera zależne od występów oraz wyników drużyny, szybszy rozwój młodych zawodników i OVR zależny od pozycji. Zachowano wcześniejsze systemy i kompatybilność zapisów 1.9.4 i starszych.
+Nowe w 1.9.7:
+- rozbudowana reprezentacja: osobne powołania i zgrupowania poza terminarzem klubowym;
+- powiadomienie o zgłoszeniu na zgrupowanie i przycisk „Jedź na zgrupowanie”;
+- osobne mecze kadry, przeciwnicy, minuty, gole, asysty i oceny;
+- typy rozgrywek reprezentacyjnych (eliminacje, Liga Narodów, turnieje młodzieżowe, MŚ/EURO);
+- historia zgrupowań i ostatnich meczów reprezentacji;
+- symulacja sezonu obsługuje zgrupowania automatycznie;
+- kompatybilność zapisów z 1.9.6 i starszymi wersjami.
