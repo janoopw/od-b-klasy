@@ -47,7 +47,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">MVP 0.5</div></header>
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">MVP 0.6.1</div></header>
 
 <div id="create" class="card">
 <h1>Stwórz zawodnika</h1>
@@ -158,7 +158,7 @@ function getLeague(){return leagueLevels[g?.leagueLevel??0]||leagueLevels[0]}
 function getLeagueTeamNames(){
  return getLeague().teams.map(t=>t.name);
 }
-function getClubData(name){return clubs.find(c=>c.name===name)||{name,strength:45,salary:900,level:g?.leagueLevel??0,league:getLeague().name}}
+function getClubData(name,preferredLevel=null){const level=preferredLevel??g?.leagueLevel??0;return (leagueLevels[level]?.teams||[]).map(t=>({...t,level,league:leagueLevels[level].name})).find(c=>c.name===name)||clubs.find(c=>c.name===name)||{name,strength:45,salary:900,level,league:leagueLevels[level]?.name||"B-klasa Warszawa"}}
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
 function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
@@ -195,7 +195,7 @@ function startGame(){
  else if(tier==="wonderkid") log("🌟 <b>Wielki talent.</b> Jeśli potwierdzisz to na boisku, szybko mogą zainteresować się Tobą większe kluby.");
  else if(tier==="talented") log("⭐ <b>Duży talent.</b> Trenerzy widzą w Tobie ponadprzeciętny potencjał.");
  log("🟢 Rozpocząłeś karierę w <b>"+g.club.name+"</b> z OVR <b>"+startOvr+"</b>. Pierwszy cel: wywalczyć miejsce w składzie.");
- makeSchedule(); g.money=0;
+ makeSchedule(); g.table=getLeagueTeamNames().map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0})); g.money=0;
  document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");render();
 }
 function currentMatch(){return g.schedule.find(x=>!x.played)}
@@ -254,7 +254,7 @@ function playMatch(){
  const starterChance=clamp(45+strengthDiff*5+g.form/5+(g.condition-70)*0.35,10,94);
  const starts=Math.random()*100<starterChance;
  const minutes=starts?rnd(65,90):rnd(0,35);
- const opponent=getClubData(m.opponent);
+ const opponent=getClubData(m.opponent,g.leagueLevel);
  const homeAdv=m.home?3:0;
  const expected=clamp(1.15+(g.club.strength-opponent.strength+homeAdv)*.07,0.25,2.6);
  const gf=Math.max(0,Math.round(expected+(Math.random()-.5)*2));
@@ -428,7 +428,7 @@ function acceptTrial(name){
  o.stage="testing";o.age=0;g.form=clamp(g.form+2,0,100);log(`🧪 Pojechałeś na trening testowy do <b>${o.name}</b>. Teraz klub oceni Cię po kolejnym etapie.`);render();
 }
 function acceptOffer(i){
- const o=g.offers[i];const old=g.club.name;const target=getClubData(o.name);g.club={...target};g.leagueLevel=target.level;g.value*=1.2;g.form=80;g.offers=[];g.interests=[];g.schedule=[];makeSchedule();g.table=getLeagueTeamNames().map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));g.condition=clamp(g.condition+10,0,100);g.trainingCount=0;
+ const o=g.offers[i];const old=g.club.name;const target=getClubData(o.name,o.level);g.club={...target};g.leagueLevel=target.level;g.value*=1.2;g.form=80;g.offers=[];g.interests=[];g.schedule=[];makeSchedule();g.table=getLeagueTeamNames().map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));g.condition=clamp(g.condition+10,0,100);g.trainingCount=0;
  log(`🔄 Transfer! ${old} → <b>${g.club.name}</b>. Pensja: ${money(g.club.salary)} zł/mies.`);go("home");
 }
 function renderFinance(){
@@ -442,7 +442,7 @@ function renderForm(){
 function saveGame(){localStorage.setItem("odBKlasy06",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
 function loadGame(){
  const x=localStorage.getItem("odBKlasy06")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
- g=JSON.parse(x);g.leagueLevel=g.leagueLevel??(g.club?.level??0);g.club={...getClubData(g.club?.name||"KS Wesoła"),...g.club,level:g.leagueLevel,league:(leagueLevels[g.leagueLevel]||leagueLevels[0]).name};g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;g.interests=g.interests??[];g.offers=g.offers??[];document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
+ g=JSON.parse(x);g.leagueLevel=clamp(Number(g.leagueLevel??(g.club?.level??0)),0,leagueLevels.length-1);g.club={...getClubData(g.club?.name||"KS Wesoła"),...g.club,level:g.leagueLevel,league:(leagueLevels[g.leagueLevel]||leagueLevels[0]).name};g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;g.interests=g.interests??[];g.offers=g.offers??[];g.schedule=Array.isArray(g.schedule)?g.schedule:[];g.table=Array.isArray(g.table)?g.table:getLeagueTeamNames().map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
 }
 function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy06");localStorage.removeItem("odBKlasy05");localStorage.removeItem("odBKlasy04");localStorage.removeItem("odBKlasy03");location.reload()}}
 function openModal(content){document.getElementById("modalBox").innerHTML=content;document.getElementById("modal").classList.remove("hidden")}
