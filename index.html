@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Od B-klasy">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Kariera: Od B-klasy — MVP 0.4.1</title>
+<title>Kariera: Od B-klasy — MVP 0.5.1</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:#070b16;color:#edf2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
@@ -47,7 +47,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">MVP 0.4.1</div></header>
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">MVP 0.5</div></header>
 
 <div id="create" class="card">
 <h1>Stwórz zawodnika</h1>
@@ -130,18 +130,29 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 <div id="modal" class="modal hidden"><div class="modalbox" id="modalBox"></div></div>
 
 <script>
-const clubs=[
-{name:"KS Wesoła",strength:42,salary:700},
-{name:"LKS Rembertów",strength:43,salary:750},
-{name:"FC Warszawa",strength:45,salary:900},
-{name:"Victoria Warszawa",strength:47,salary:1050},
-{name:"Orzeł Pruszków",strength:49,salary:1200},
-{name:"Polonia II Warszawa",strength:57,salary:1800},
-{name:"Legia II Warszawa",strength:62,salary:2600}
+const leagueLevels=[
+ {name:"B-klasa Warszawa",teams:[
+  {name:"KS Wesoła",strength:42,salary:700},{name:"LKS Rembertów",strength:43,salary:750},{name:"FC Warszawa",strength:45,salary:900},{name:"Victoria Warszawa",strength:47,salary:1050},{name:"Orzeł Pruszków",strength:49,salary:1200},{name:"KS Ursus II",strength:43,salary:780},{name:"Delta Warszawa",strength:44,salary:820},{name:"Mazur Karczew",strength:46,salary:880}
+ ]},
+ {name:"A-klasa Warszawa",teams:[
+  {name:"Okęcie Warszawa",strength:50,salary:1150},{name:"Legion Warszawa",strength:51,salary:1250},{name:"Unia Warszawa",strength:52,salary:1300},{name:"Naprzód Stare Babice",strength:53,salary:1350},{name:"Sokół Serock",strength:54,salary:1450},{name:"Błonianka II",strength:55,salary:1500},{name:"Huragan Wołomin",strength:56,salary:1600},{name:"Wisła Płock U21",strength:57,salary:1700}
+ ]},
+ {name:"Liga Okręgowa Warszawa",teams:[
+  {name:"Polonia II Warszawa",strength:57,salary:1800},{name:"Legia II Warszawa",strength:62,salary:2600},{name:"Drukarz Warszawa",strength:59,salary:2000},{name:"Ząbkovia Ząbki",strength:60,salary:2200},{name:"MKS Piaseczno",strength:61,salary:2300},{name:"Mazur II Karczew",strength:58,salary:1900},{name:"KS Łomianki",strength:56,salary:1750},{name:"Victoria Sulejówek",strength:60,salary:2150}
+ ]},
+ {name:"IV liga Mazowiecka",teams:[
+  {name:"Legia II Warszawa",strength:62,salary:2600},{name:"Polonia Warszawa II",strength:64,salary:2800},{name:"MKS Piaseczno",strength:63,salary:2700},{name:"Hutnik Warszawa",strength:65,salary:3000},{name:"Ząbkovia Ząbki",strength:61,salary:2500},{name:"Mazur Karczew",strength:60,salary:2350},{name:"Świt II Nowy Dwór",strength:66,salary:3200},{name:"Wisła II Płock",strength:67,salary:3400}
+ ]}
 ];
-const leagueTeams=[
-"KS Wesoła","LKS Rembertów","FC Warszawa","Victoria Warszawa","Orzeł Pruszków","KS Ursus II","Delta Warszawa","Mazur Karczew"
-];
+const clubs=leagueLevels.flatMap((l,level)=>l.teams.map(t=>({...t,level,league:l.name})));
+const leagueTeams=leagueLevels[0].teams.map(t=>t.name);
+let g=null;
+function getLeague(){return leagueLevels[g?.leagueLevel??0]||leagueLevels[0]}
+function getLeagueTeamNames(){
+ const names=getLeague().teams.map(t=>t.name).filter(n=>n!==g.club.name);
+ return [g.club.name,...names.slice(0,7)];
+}
+function getClubData(name){return clubs.find(c=>c.name===name)||{name,strength:45,salary:900,level:g?.leagueLevel??0,league:getLeague().name}}
 let g=null;
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
@@ -157,22 +168,29 @@ function go(page){
  render();
 }
 function makeSchedule(){
- const pool=leagueTeams.filter(x=>x!==g.club.name);
+ const pool=getLeagueTeamNames().filter(x=>x!==g.club.name);
  const opponents=pool.slice(0,7);
  g.schedule=opponents.map((opp,i)=>({round:i+1,opponent:opp,home:i%2===0,played:false,result:null,goalsFor:0,goalsAgainst:0,performance:null}));
 }
 function startGame(){
  const age=+document.getElementById("age").value, pos=document.getElementById("pos").value;
- const base=rnd(39,48), potential=clamp(base+rnd(20,31)-(age-17)*3,52,78);
- g={name:document.getElementById("name").value||"Nowy zawodnik",age,pos,region:document.getElementById("region").value,
- pace:rnd(base-2,base+9),shoot:rnd(base-6,base+5),pass:rnd(base-4,base+7),drib:rnd(base-2,base+8),phys:rnd(base-1,base+9),def:rnd(22,base+2),
- potential,form:75,condition:100,value:15000,season:"2026/27",club:clubs[0],apps:0,starts:0,goals:0,assists:0,minutes:0,ratingSum:0,
- round:0,money:0,contractMonths:12,history:[],schedule:[],offers:[],interests:[],trainingPoints:0,trainingCount:0};
- makeSchedule();
- g.money=0;
- document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");
- log("🟢 Rozpocząłeś karierę w <b>"+g.club.name+"</b>. Pierwszy cel: wywalczyć miejsce w składzie.");
- render();
+ // Rzadkie talenty mogą zaczynać karierę z bardzo wysokim OVR i potencjałem.
+ const roll=Math.random(); let tier="normal",base,potential;
+ if(roll<0.006){tier="generational";base=rnd(62,66);potential=rnd(93,97)}
+ else if(roll<0.035){tier="wonderkid";base=rnd(56,62);potential=rnd(86,93)}
+ else if(roll<0.15){tier="talented";base=rnd(48,55);potential=rnd(74,85)}
+ else {tier="normal";base=rnd(39,48);potential=clamp(base+rnd(20,31)-(age-17)*3,52,78)}
+ if(tier!=="normal") potential=clamp(potential-(age-16)*2,base+5,97);
+ const makeStat=(min,max)=>clamp(rnd(min,max),25,potential);
+ const stats={pace:makeStat(base-2,base+8),shoot:makeStat(base-6,base+5),pass:makeStat(base-4,base+7),drib:makeStat(base-2,base+8),phys:makeStat(base-1,base+8),def:makeStat(22,base+2)};
+ g={name:document.getElementById("name").value||"Nowy zawodnik",age,pos,region:document.getElementById("region").value,...stats,potential,talentTier:tier,form:75,condition:100,value:15000,season:"2026/27",leagueLevel:0,club:{...clubs[0]},apps:0,starts:0,goals:0,assists:0,minutes:0,ratingSum:0,round:0,money:0,contractMonths:12,history:[],schedule:[],offers:[],interests:[],trainingPoints:0,trainingCount:0};
+ const startOvr=avg();
+ if(tier==="generational") log("✨ <b>Niecodzienny talent.</b> Już na starcie wyróżniasz się na tle rówieśników.");
+ else if(tier==="wonderkid") log("🌟 <b>Wielki talent.</b> Jeśli potwierdzisz to na boisku, szybko mogą zainteresować się Tobą większe kluby.");
+ else if(tier==="talented") log("⭐ <b>Duży talent.</b> Trenerzy widzą w Tobie ponadprzeciętny potencjał.");
+ log("🟢 Rozpocząłeś karierę w <b>"+g.club.name+"</b> z OVR <b>"+startOvr+"</b>. Pierwszy cel: wywalczyć miejsce w składzie.");
+ makeSchedule(); g.money=0;
+ document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");render();
 }
 function currentMatch(){return g.schedule.find(x=>!x.played)}
 function render(){
@@ -188,6 +206,7 @@ function render(){
  document.getElementById("apps").textContent=g.apps;document.getElementById("goals").textContent=g.goals;
  const m=currentMatch();
  if(m){
+  document.getElementById("event").classList.add("hidden");
   document.getElementById("roundLabel").textContent="KOLEJKA "+m.round+" / "+g.schedule.length;
   document.getElementById("homeTeam").textContent=m.home?g.club.name:m.opponent;
   document.getElementById("awayTeam").textContent=m.home?m.opponent:g.club.name;
@@ -213,7 +232,7 @@ function renderSchedule(){
 }
 function simulateOtherGames(){
  // Small deterministic-ish simulation: only the player's match is tied to his result.
- g.table=leagueTeams.map((name,i)=>g.table?.find(x=>x.name===name)||{name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0});
+ g.table=getLeagueTeamNames().map(name=>g.table?.find(x=>x.name===name)||{name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0});
  // Each round, simulate 3 neutral fixtures among non-player teams.
  const others=g.table.filter(t=>t.name!==g.club.name);
  for(let i=0;i<Math.floor(others.length/2);i++){
@@ -229,7 +248,7 @@ function playMatch(){
  const starterChance=clamp(45+strengthDiff*5+g.form/5+(g.condition-70)*0.35,10,94);
  const starts=Math.random()*100<starterChance;
  const minutes=starts?rnd(65,90):rnd(0,35);
- const opponent=clubs.find(c=>c.name===m.opponent)||{strength:rnd(40,55)};
+ const opponent=getClubData(m.opponent);
  const homeAdv=m.home?3:0;
  const expected=clamp(1.15+(g.club.strength-opponent.strength+homeAdv)*.07,0.25,2.6);
  const gf=Math.max(0,Math.round(expected+(Math.random()-.5)*2));
@@ -265,7 +284,7 @@ function playMatch(){
  render();
 }
 function updatePlayerTable(m,gf,ga){
- if(!g.table)g.table=leagueTeams.map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));
+ if(!g.table)g.table=getLeagueTeamNames().map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));
  let me=g.table.find(x=>x.name===g.club.name);if(!me)return;
  me.m++;me.gf+=gf;me.ga+=ga;
  if(gf>ga){me.pts+=3;me.w++}else if(gf===ga){me.pts++;me.d++}else me.l++;
@@ -273,21 +292,28 @@ function updatePlayerTable(m,gf,ga){
 function showSeasonButton(){document.getElementById("event").classList.remove("hidden");document.getElementById("event").innerHTML="<h3>🏁 Sezon zakończony</h3><div>Masz komplet meczów. Przejdź do podsumowania i zdecyduj, co dalej.</div><div class='actions'><button onclick='finishSeason()'>Podsumuj sezon</button></div>"}
 function finishSeason(){
  if(!g.schedule.every(x=>x.played)){go("schedule");return}
+ document.getElementById("event").classList.add("hidden");
  const table=[...(g.table||[])].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga));
  const pos=table.findIndex(x=>x.name===g.club.name)+1;
  const avgRating=g.apps?g.ratingSum/g.apps:0;
- const oldClub=g.club.name;
- let promoted=pos<=2;
- let relegated=pos>=7;
- let report=`<h3>🏆 ${g.season}</h3><p>Zakończyłeś sezon na <b>${pos}. miejscu</b>. Średnia ocena: <b>${avgRating.toFixed(2)}</b>. Mecze: ${g.apps}, gole: ${g.goals}, asysty: ${g.assists}.</p>`;
- if(promoted && clubs.findIndex(c=>c.name===g.club.name)<clubs.length-1){let i=clubs.findIndex(c=>c.name===g.club.name);g.club=clubs[Math.min(i+1,clubs.length-1)];report+="<p class='greenText'>🚀 Klub awansował. Wchodzisz poziom wyżej!</p>";}
- else if(relegated){report+="<p class='redText'>⬇️ Klub spadł. Nowy sezon zaczniecie na niższym poziomie.</p>";}
- else report+="<p>➡️ Klub pozostaje na obecnym poziomie.</p>";
+ const oldLeague=getLeague().name;
+ let promoted=pos<=2 && g.leagueLevel<leagueLevels.length-1;
+ let relegated=pos>=7 && g.leagueLevel>0;
+ let report=`<h3>🏆 ${g.season}</h3><p><b>${oldLeague}</b> • zakończyłeś sezon na <b>${pos}. miejscu</b>. Średnia ocena: <b>${avgRating.toFixed(2)}</b>. Mecze: ${g.apps}, gole: ${g.goals}, asysty: ${g.assists}.</p>`;
+ if(promoted){
+   g.leagueLevel++; g.club.level=g.leagueLevel; g.club.league=getLeague().name; g.club.strength=Math.min(70,g.club.strength+3); g.club.salary=Math.round(g.club.salary*1.15);
+   report+=`<p class='greenText'>🚀 AWANS! ${g.club.name} przechodzi do <b>${getLeague().name}</b>.</p>`;
+ } else if(relegated){
+   g.leagueLevel--; g.club.level=g.leagueLevel; g.club.league=getLeague().name; g.club.strength=Math.max(38,g.club.strength-2); g.club.salary=Math.round(g.club.salary*.92);
+   report+=`<p class='redText'>⬇️ SPADek. Nowy sezon rozegrasz w <b>${getLeague().name}</b>.</p>`;
+ } else if(g.leagueLevel===leagueLevels.length-1 && pos<=3){
+   report+=`<p>🏅 Jesteście w <b>${getLeague().name}</b>. Na tym etapie nie ma jeszcze wyższej ligi w grze.</p>`;
+ } else report+=`<p>➡️ Klub pozostaje w <b>${getLeague().name}</b>.</p>`;
  g.age++;g.season=nextSeason(g.season);g.apps=0;g.starts=0;g.goals=0;g.assists=0;g.minutes=0;g.ratingSum=0;g.round=0;g.form=82;g.condition=100;g.trainingCount=0;g.contractMonths=Math.max(0,g.contractMonths-12);
  const growth=Math.random()<.75?rnd(1,2):0;
  if(g.age<=30 && growth){for(let i=0;i<2;i++){if(avg()<g.potential&&Math.random()<.55){const k=developmentKey();g[k]=Math.min(g.potential,g[k]+growth)}}}
- g.value*=1.05;makeSchedule();g.table=leagueTeams.map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));
- g.offers=[];g.interests=[];log(report.replace(/<[^>]+>/g," "));openModal(report+"<div class='actions'><button onclick='closeModal()'>Rozpocznij nowy sezon</button></div>");render();
+ g.value*=1.05;makeSchedule();g.table=getLeagueTeamNames().map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));
+ g.offers=[];g.interests=[];log(report.replace(/<[^>]+>/g," "));openModal(report+"<div class='actions'><button onclick='closeModal();render()'>Rozpocznij nowy sezon</button></div>");render();
 }
 function nextSeason(s){let y=+s.slice(0,4)+1;return `${y}/${String(y+1).slice(2)}`}
 function developmentKey(){
@@ -347,7 +373,7 @@ function renderPlayer(){
 function generateInterest(){
  const recent=g.history.slice(0,4);
  const avgRecent=recent.length?recent.reduce((a,x)=>a+Number(x.rating||0),0)/recent.length:0;
- const higher=clubs.filter(c=>c.strength>g.club.strength && c.strength<=avg()+18 && c.name!==g.club.name);
+ const higher=clubs.filter(c=>c.level>=g.leagueLevel && c.strength>g.club.strength && c.strength<=avg()+18 && c.name!==g.club.name);
  if(!higher.length)return;
  if(avgRecent && avgRecent<6.4 && g.apps>1)return;
  const available=higher.filter(c=>!g.interests.some(o=>o.name===c.name&&o.stage!=="rejected")&&!g.offers.some(o=>o.name===c.name));
@@ -394,7 +420,7 @@ function acceptTrial(name){
  o.stage="testing";o.age=0;g.form=clamp(g.form+2,0,100);log(`🧪 Pojechałeś na trening testowy do <b>${o.name}</b>. Teraz klub oceni Cię po kolejnym etapie.`);render();
 }
 function acceptOffer(i){
- const o=g.offers[i];const old=g.club.name;g.club={name:o.name,strength:o.strength,salary:o.salary};g.value*=1.2;g.form=80;g.offers=[];g.interests=[];g.schedule=[];makeSchedule();g.table=leagueTeams.map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));g.condition=clamp(g.condition+10,0,100);g.trainingCount=0;
+ const o=g.offers[i];const old=g.club.name;const target=getClubData(o.name);g.club={...target};g.leagueLevel=target.level;g.value*=1.2;g.form=80;g.offers=[];g.interests=[];g.schedule=[];makeSchedule();g.table=getLeagueTeamNames().map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));g.condition=clamp(g.condition+10,0,100);g.trainingCount=0;
  log(`🔄 Transfer! ${old} → <b>${g.club.name}</b>. Pensja: ${money(g.club.salary)} zł/mies.`);go("home");
 }
 function renderFinance(){
@@ -405,12 +431,12 @@ function renderForm(){
  if(!g.history.length){el.innerHTML="<p class='muted'>Jeszcze nie rozegrałeś meczu.</p>";return}
  el.innerHTML=g.history.slice(0,5).map(x=>`<div class="row"><div><div class="rowTitle">${x.gf}:${x.ga} vs ${esc(x.opp)}</div><div class="rowSub">${x.minutes} min • ⚽ ${x.goals} • 🅰️ ${x.assists}</div></div><b>${x.rating}</b></div>`).join("");
 }
-function saveGame(){localStorage.setItem("odBKlasy04",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
+function saveGame(){localStorage.setItem("odBKlasy051",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
 function loadGame(){
- const x=localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
- g=JSON.parse(x);g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;g.interests=g.interests??[];g.offers=g.offers??[];document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
+ const x=localStorage.getItem("odBKlasy051")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
+ g=JSON.parse(x);g.leagueLevel=g.leagueLevel??(g.club?.level??0);g.club={...getClubData(g.club?.name||"KS Wesoła"),...g.club,level:g.leagueLevel,league:(leagueLevels[g.leagueLevel]||leagueLevels[0]).name};g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;g.interests=g.interests??[];g.offers=g.offers??[];document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
 }
-function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy04");localStorage.removeItem("odBKlasy03");location.reload()}}
+function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy051");localStorage.removeItem("odBKlasy05");localStorage.removeItem("odBKlasy04");localStorage.removeItem("odBKlasy03");location.reload()}}
 function openModal(content){document.getElementById("modalBox").innerHTML=content;document.getElementById("modal").classList.remove("hidden")}
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
