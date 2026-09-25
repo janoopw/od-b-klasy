@@ -1,2 +1,3 @@
-Od B-klasy — World 1.9.3
-Wartość rynkowa zależna od OVR, wieku, potencjału, ligi, formy, ocen, goli i asyst.
+Od B-klasy — World 1.9.4
+
+Nowe: ocena zawodnika jest uwzględniana w wycenie niezależnie od skali 5/10; poprawiona ścieżka europejska z kwalifikacjami, dwumeczami i spadkami UCL→UEL→UECL. Zachowano wcześniejsze systemy i kompatybilność zapisów.
