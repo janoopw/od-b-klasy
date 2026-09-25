@@ -1,7 +1,7 @@
-# Od B-klasy World 1.7
-- Naprawiono symulację pełnego sezonu: ligi 18-zespołowe mają 34 kolejki, a pozostałe ligi są symulowane równolegle.
-- Naprawiono tabelę ligi gracza: przeciwnik dostaje wynik i mecz po rozegraniu meczu gracza.
-- Dodano możliwość odrzucenia zaproszenia na trening testowy.
-- Zachowano wcześniejsze mechaniki.
+# Od B-klasy — World 1.8.5
 
-World 1.8.4: poprawiona pełna symulacja rund/sezonu oraz automatyczne zarządzanie treningiem podczas symulacji.
+- Tryb kariery wybierany na starcie: mecz po meczu, po rundzie albo po całym sezonie.
+- Tryb rundy/sezonu automatyzuje trening i obsługę wydarzeń podczas symulacji, a po symulacji pokazuje najważniejsze zdarzenia.
+- Testy, zainteresowanie i powołania nie wymagają ręcznej obsługi w trakcie szybkiej symulacji.
+- Liga, puchar krajowy i europejskie puchary są w jednym terminarzu.
+- Zachowano zgodność ze starszymi zapisami.
