@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Kariera: Od B-klasy — MVP</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:#070b16;color:#edf2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+body{min-height:100vh;overscroll-behavior:none}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0;border-radius:14px;padding:14px 16px;background:#2563eb;color:#fff;font-weight:800;min-height:48px;touch-action:manipulation}
+button:active{transform:scale(.98)}
+button.secondary{background:#1b253d}button.danger{background:#b91c1c}
+.wrap{width:100%;max-width:1050px;margin:auto;padding:env(safe-area-inset-top) 12px calc(20px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 2px 12px;position:sticky;top:0;z-index:5;background:#070b16ee;backdrop-filter:blur(12px)}
+.logo{font-size:19px;font-weight:950;letter-spacing:-.4px}
+.card{background:linear-gradient(180deg,#11182b,#0e1526);border:1px solid #202c46;border-radius:18px;padding:15px;box-shadow:0 12px 35px #0005}
+.grid{display:flex;flex-direction:column;gap:12px}
+.profile{order:0}
+.profile h2{margin:0 0 3px;font-size:22px}.muted{color:#8794b1}
+.big{font-size:42px;font-weight:950;line-height:1;margin-top:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:14px}
+.stat{background:#0a1020;padding:9px;border-radius:11px;font-size:11px;color:#8f9ab5}
+.stat b{display:block;font-size:17px;color:#edf2ff;margin-top:2px}
+.top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:#0a1020;padding:11px;border-radius:12px;font-size:11px;color:#8f9ab5}
+.metric b{display:block;font-size:17px;color:#edf2ff;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
+.actions button{width:100%}
+.log{height:210px;overflow:auto;background:#070c18;border-radius:12px;padding:12px;-webkit-overflow-scrolling:touch}
+.log p{margin:0 0 9px;border-bottom:1px solid #18233a;padding-bottom:9px;font-size:13px;line-height:1.35}
+.event{border-left:4px solid #22c55e;background:#101a2d;padding:13px;border-radius:10px;margin-top:12px;line-height:1.35}
+.bar{height:7px;background:#26314d;border-radius:99px;overflow:hidden}.fill{height:100%;background:#22c55e}
+.hidden{display:none}
+hr{border:0;border-top:1px solid #26314d}
+#create{margin-top:8px}
+#create h1{font-size:27px;margin-top:0}
+#create label{font-size:13px;color:#9aa6c0}
+#create input,#create select{appearance:none;-webkit-appearance:none;width:100%;padding:13px;margin-top:6px;border-radius:11px;border:1px solid #33415f;background:#0a1020;color:white;outline:none}
+#create .actions{display:block}
+#create .actions button{width:100%}
+@media(min-width:700px){
+ .wrap{padding-left:20px;padding-right:20px}
+ .grid{display:grid;grid-template-columns:280px 1fr;gap:18px}
+ .top{grid-template-columns:repeat(4,1fr)}
+ .stats{grid-template-columns:1fr 1fr}
+ .actions{display:flex;flex-wrap:wrap}
+ .actions button{width:auto}
+}
+</style>
+
+<meta name="theme-color" content="#070b16">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Od B-klasy">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted">MVP 0.1</div></header>
+
+<div id="create" class="card">
+<h1>Stwórz zawodnika</h1>
+<p class="muted">Zaczynasz od lokalnego futbolu. Celem jest zbudowanie kariery od zera.</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+<label>Imię i nazwisko<input id="name" value="Patryk Kowalski" style="width:100%;padding:11px;margin-top:5px;border-radius:8px;border:1px solid #33415f;background:#0d1425;color:white"></label>
+<label>Pozycja<select id="pos" style="width:100%;padding:11px;margin-top:5px;border-radius:8px;background:#0d1425;color:white"><option>Napastnik</option><option>Pomocnik</option><option>Obrońca</option><option>Bramkarz</option></select></label>
+</div>
+<div class="actions"><button onclick="startGame()">Rozpocznij karierę</button></div>
+</div>
+
+<div id="game" class="hidden">
+<div class="grid">
+<aside class="card profile">
+<h2 id="pname"></h2><div class="muted" id="ppos"></div>
+<div class="big" id="ovr"></div><div class="muted">OVR</div>
+<div class="stats">
+<div class="stat">⚡ Szybkość<b id="pace"></b></div><div class="stat">🎯 Strzał<b id="shoot"></b></div>
+<div class="stat">🧠 Podania<b id="pass"></b></div><div class="stat">🪄 Drybling<b id="drib"></b></div>
+<div class="stat">💪 Fizyczność<b id="phys"></b></div><div class="stat">🛡️ Obrona<b id="def"></b></div>
+</div>
+<hr style="border-color:#26314d;margin:18px 0">
+<div>Forma <b id="form"></b>%</div><div class="bar"><div id="formbar" class="fill"></div></div>
+<p>💰 Wartość: <b id="value"></b> zł</p><p>💵 Pensja: <b id="salary"></b> zł/mies.</p>
+</aside>
+
+<main>
+<div class="top">
+<div class="metric">📅 Sezon<b id="season"></b></div>
+<div class="metric">🏟️ Klub<b id="club"></b></div>
+<div class="metric">⚽ Mecze<b id="apps"></b></div>
+<div class="metric">⭐ Gole<b id="goals"></b></div>
+</div>
+
+<div class="card" style="margin-top:18px">
+<h2>Centrum kariery</h2>
+<div class="actions">
+<button onclick="playMatch()">Rozegraj mecz</button>
+<button onclick="train()">Trening</button>
+<button class="secondary" onclick="nextMonth()">Kolejny miesiąc</button>
+<button class="secondary" onclick="saveGame()">Zapisz</button>
+<button class="secondary" onclick="loadGame()">Wczytaj</button>
+</div>
+<div id="event" class="event hidden"></div>
+<h3>Dziennik kariery</h3><div id="log" class="log"></div>
+</div>
+
+<div class="card" style="margin-top:18px">
+<h2>Koniec sezonu</h2>
+<p class="muted">Po 10 meczach możesz przejść do kolejnego sezonu. Wyniki i rozwój są generowane przez symulator.</p>
+<button onclick="finishSeason()">Zakończ sezon</button>
+</div>
+</main>
+</div>
+</div>
+</div>
+
+<script>
+const clubs = [
+ {name:"KS Wesoła",league:"B-klasa",strength:38,salary:700},
+ {name:"LKS Rembertów",league:"B-klasa",strength:40,salary:750},
+ {name:"FC Warszawa",league:"A-klasa",strength:48,salary:1100},
+ {name:"KS Ursus II",league:"A-klasa",strength:50,salary:1200},
+ {name:"Victoria Warszawa",league:"Okręgówka",strength:58,salary:1700}
+];
+let g=null;
+
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function avg(){return Math.round((g.pace+g.shoot+g.pass+g.drib+g.phys+g.def)/6)}
+function money(n){return Math.round(n).toLocaleString("pl-PL")}
+function log(t){let el=document.getElementById("log");el.innerHTML="<p>"+t+"</p>"+el.innerHTML}
+function render(){
+ document.getElementById("pname").textContent=g.name;
+ document.getElementById("ppos").textContent=g.pos+" • "+g.club.league;
+ document.getElementById("ovr").textContent=avg();
+ ["pace","shoot","pass","drib","phys","def"].forEach(x=>document.getElementById(x).textContent=g[x]);
+ document.getElementById("form").textContent=g.form;
+ document.getElementById("formbar").style.width=g.form+"%";
+ document.getElementById("value").textContent=money(g.value);
+ document.getElementById("salary").textContent=money(g.club.salary);
+ document.getElementById("season").textContent=g.season;
+ document.getElementById("club").textContent=g.club.name;
+ document.getElementById("apps").textContent=g.apps;
+ document.getElementById("goals").textContent=g.goals;
+}
+function startGame(){
+ const c=clubs[0];
+ g={name:document.getElementById("name").value||"Nowy zawodnik",pos:document.getElementById("pos").value,
+ pace:rnd(40,55),shoot:rnd(35,52),pass:rnd(38,55),drib:rnd(38,55),phys:rnd(40,58),def:rnd(25,50),
+ form:75,value:15000,season:"2026/27",club:c,apps:0,goals:0,month:1};
+ document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");
+ log("🟢 Rozpocząłeś karierę w <b>"+c.name+"</b>. Powodzenia!");
+ render();
+}
+function playMatch(){
+ if(g.apps>=10){log("⚠️ Osiągnąłeś limit 10 meczów w tym sezonie. Zakończ sezon.");return}
+ let chance=Math.max(10,Math.min(90,45+(avg()-g.club.strength)*2+Math.floor((g.form-70)/4)));
+ let win=Math.random()*100<chance;
+ let scored=Math.random()*100 < (g.pos==="Napastnik"?35:18)+(avg()-40)*0.35;
+ g.apps++; if(scored)g.goals++;
+ g.form=Math.max(35,Math.min(100,g.form+rnd(-6,6)));
+ g.value*=1+(win?.012:.004)+(scored?.025:0);
+ log((win?"🟢 Wygrana":"🔴 Porażka")+" — mecz "+g.apps+"/10"+(scored?" ⚽ Strzeliłeś gola!":""));
+ render();
+}
+function train(){
+ let key=["pace","shoot","pass","drib","phys","def"][rnd(0,5)];
+ g[key]=Math.min(90,g[key]+rnd(1,2));g.form=Math.min(100,g.form+5);g.value*=1.01;
+ log("🏋️ Trening: <b>"+key+"</b> +"+(g[key]>0?"1":"")+" pkt. Forma +5.");
+ render();
+}
+function nextMonth(){
+ g.month++;g.form=Math.max(30,g.form-rnd(1,5));
+ if(Math.random()<.18){
+  let ev=[
+   "👀 Skaut z wyższej ligi pojawił się na trybunach.",
+   "🩹 Lekki uraz — forma spada.",
+   "💰 Dostałeś premię 300 zł.",
+   "📱 Klub zaproponował Ci testy w wyższej lidze."
+  ][rnd(0,3)];
+  document.getElementById("event").textContent=ev;document.getElementById("event").classList.remove("hidden");
+  if(ev.includes("uraz"))g.form=Math.max(25,g.form-15);
+  if(ev.includes("premię"))g.value+=300;
+  log(ev);
+ } else log("📅 Minął kolejny miesiąc. Trenujesz i czekasz na kolejne mecze.");
+ render();
+}
+function finishSeason(){
+ if(g.apps<10){log("⚠️ Zagraj jeszcze "+(10-g.apps)+" meczów przed końcem sezonu.");return}
+ let old=avg(), promoted=Math.random()<0.5;
+ if(promoted && g.club!==clubs[clubs.length-1]){
+  let idx=clubs.findIndex(c=>c.name===g.club.name);g.club=clubs[Math.min(idx+1,clubs.length-1)];
+  g.salary=g.club.salary;log("🚀 AWANS! Przechodzisz do <b>"+g.club.name+"</b> ("+g.club.league+").");
+ } else log("📊 Sezon zakończony. Klub pozostaje na obecnym poziomie.");
+ g.season=(2027+parseInt(g.season.slice(5,7)))+"/"+(28+parseInt(g.season.slice(5,7)));
+ g.apps=0;g.goals=0;g.form=80;
+ let key=["pace","shoot","pass","drib","phys","def"];key.forEach(k=>{if(Math.random()<.7)g[k]=Math.min(90,g[k]+rnd(0,2))});
+ log("📈 OVR: "+old+" → "+avg()+". Nowy sezon rozpoczęty.");
+ render();
+}
+function saveGame(){localStorage.setItem("karieraMVP",JSON.stringify(g));log("💾 Zapisano grę w tej przeglądarce.")}
+function loadGame(){
+ let x=localStorage.getItem("karieraMVP");if(!x){log("Brak zapisu.");return}
+ g=JSON.parse(x);g.club=clubs.find(c=>c.name===g.club.name)||clubs[0];g.form=g.form??75;document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");render();log("📂 Wczytano zapis.");
+}
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>

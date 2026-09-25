@@ -1,0 +1,11 @@
+{
+  "name": "Kariera: Od B-klasy",
+  "short_name": "Od B-klasy",
+  "description": "Piłkarski symulator kariery od lokalnego futbolu.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#070b16",
+  "theme_color": "#070b16",
+  "orientation": "portrait",
+  "icons": []
+}
