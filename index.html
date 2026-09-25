@@ -153,7 +153,6 @@ function getLeagueTeamNames(){
  return [g.club.name,...names.slice(0,7)];
 }
 function getClubData(name){return clubs.find(c=>c.name===name)||{name,strength:45,salary:900,level:g?.leagueLevel??0,league:getLeague().name}}
-let g=null;
 
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
 function clamp(x,a,b){return Math.max(a,Math.min(b,x))}
