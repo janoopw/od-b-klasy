@@ -42,6 +42,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 .modal{position:fixed;inset:0;z-index:50;background:#02050bd9;display:flex;align-items:flex-end;justify-content:center;padding:12px}.modalbox{width:min(650px,100%);background:#11182b;border:1px solid #2a3959;border-radius:20px;padding:18px;box-shadow:0 20px 60px #0009}
 .choice{display:grid;gap:8px;margin-top:13px}.choice button{text-align:left}
 @media(min-width:800px){.wrap{padding-left:20px;padding-right:20px}.grid{display:grid;grid-template-columns:280px 1fr;gap:18px}.top{grid-template-columns:repeat(4,1fr)}.stats{grid-template-columns:1fr 1fr}.tabs{position:sticky;top:70px;bottom:auto;max-width:1050px;margin:0 auto 14px;border:1px solid #202c46;border-radius:14px;grid-template-columns:repeat(5,1fr)}.tab{font-size:12px}.tab span{display:inline;margin-right:5px}.actions{display:flex;flex-wrap:wrap}.actions button{width:auto}.modal{align-items:center}}
+.trainingGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.trainingGrid button{width:100%}.stage{font-size:12px;padding:3px 7px;border-radius:999px;background:#18223a;color:#b9c6e4}.stage.green{color:#79e2a8}.stage.yellow{color:#ffd66b}.stage.blue{color:#75b8ff}
 </style>
 </head>
 <body>
@@ -93,7 +94,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 <div class="muted" id="roundLabel"></div>
 <div class="teams"><div><div class="team" id="homeTeam"></div><div class="muted">Gospodarz</div></div><div class="vs">VS</div><div><div class="team" id="awayTeam"></div><div class="muted">Rywal</div></div></div>
 <div class="badges"><span class="badge" id="matchDate"></span><span class="badge" id="matchStatus"></span></div>
-<div class="actions"><button onclick="playMatch()" id="matchBtn">⚽ Rozegraj mecz</button><button class="secondary" onclick="train()">🏋️ Trening</button></div>
+<div class="actions"><button onclick="playMatch()" id="matchBtn">⚽ Rozegraj mecz</button></div>
 </div>
 <div id="event" class="event hidden"></div>
 <div class="card"><h2>📈 Ostatnia forma</h2><div id="formList"></div></div>
@@ -111,7 +112,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 <section id="page-player" class="page">
 <div class="card"><h2>👤 Rozwój zawodnika</h2>
 <div id="development"></div>
-<div class="actions"><button onclick="train()">🏋️ Trening</button><button class="secondary" onclick="rest()">🛌 Odpoczynek</button></div>
+<div class="trainingGrid"><button onclick="train('technical')">🪄 Technika</button><button onclick="train('shooting')">🎯 Strzelecki</button><button onclick="train('physical')">💪 Motoryka</button><button onclick="train('individual')">🎯 Indywidualny</button></div><div class="actions"><button class="secondary" onclick="rest()">🛌 Odpoczynek</button></div>
 </div>
 <div class="card" style="margin-top:12px"><h2>📈 Statystyki sezonu</h2><div id="seasonStats"></div></div>
 </section>
@@ -165,7 +166,7 @@ function startGame(){
  g={name:document.getElementById("name").value||"Nowy zawodnik",age,pos,region:document.getElementById("region").value,
  pace:rnd(base-2,base+9),shoot:rnd(base-6,base+5),pass:rnd(base-4,base+7),drib:rnd(base-2,base+8),phys:rnd(base-1,base+9),def:rnd(22,base+2),
  potential,form:75,condition:100,value:15000,season:"2026/27",club:clubs[0],apps:0,starts:0,goals:0,assists:0,minutes:0,ratingSum:0,
- round:0,money:0,contractMonths:12,history:[],schedule:[],offers:[],trainingPoints:0,trainingCount:0};
+ round:0,money:0,contractMonths:12,history:[],schedule:[],offers:[],interests:[],trainingPoints:0,trainingCount:0};
  makeSchedule();
  g.money=0;
  document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");
@@ -199,7 +200,7 @@ function render(){
   document.getElementById("matchBtn").disabled=false;document.getElementById("matchBtn").textContent="🏆 Podsumuj sezon";
  }
  const canTrain=g.trainingCount<2 && g.condition>=35;
- document.querySelectorAll("button[onclick='train()']").forEach(b=>{b.disabled=!canTrain;b.textContent=canTrain?"🏋️ Trening":(g.trainingCount>=2?"🏁 Limit treningów":"😴 Za niska kondycja")});
+ document.querySelectorAll(".trainingGrid button").forEach(b=>{b.disabled=!canTrain;});
  renderSchedule();renderTable();renderPlayer();renderOffers();renderFinance();renderForm();
 }
 function renderSchedule(){
@@ -257,7 +258,8 @@ function playMatch(){
  g.history.unshift({round:m.round,opp:m.opponent,gf,ga,rating:m.performance,minutes,goals,assists});
  log(`${gf>ga?"🟢":"🔴"} <b>${g.club.name} ${gf}:${ga} ${m.opponent}</b> — ${minutes} min, ocena ${m.performance}${goals?`, ⚽ ${goals}`:""}${assists?`, 🅰️ ${assists}`:""}`);
  if(minutes===0)log("🪑 Nie wszedłeś na boisko. Trener oczekuje lepszej dyspozycji na treningach.");
- if(g.apps%3===0 && Math.random()<.5) generateOffer();
+ advanceTransferStories();
+ if(g.apps%2===0 && Math.random()<.55) generateInterest();
  if(g.schedule.every(x=>x.played)) showSeasonButton();
  render();
 }
@@ -284,7 +286,7 @@ function finishSeason(){
  const growth=Math.random()<.75?rnd(1,2):0;
  if(g.age<=30 && growth){for(let i=0;i<2;i++){if(avg()<g.potential&&Math.random()<.55){const k=developmentKey();g[k]=Math.min(g.potential,g[k]+growth)}}}
  g.value*=1.05;makeSchedule();g.table=leagueTeams.map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));
- g.offers=[];log(report.replace(/<[^>]+>/g," "));openModal(report+"<div class='actions'><button onclick='closeModal()'>Rozpocznij nowy sezon</button></div>");render();
+ g.offers=[];g.interests=[];log(report.replace(/<[^>]+>/g," "));openModal(report+"<div class='actions'><button onclick='closeModal()'>Rozpocznij nowy sezon</button></div>");render();
 }
 function nextSeason(s){let y=+s.slice(0,4)+1;return `${y}/${String(y+1).slice(2)}`}
 function developmentKey(){
@@ -296,21 +298,32 @@ function growthChance(){
  const gap=clamp((g.potential-avg())/15,.08,1);
  return .18*ageFactor*gap;
 }
-function train(){
+function train(type="individual"){
  if(g.trainingCount>=2){log("🏁 Wykorzystałeś już 2 treningi przed tym meczem.");return}
  if(g.condition<35){log("😴 Kondycja jest zbyt niska na kolejny trening. Odpocznij.");return}
- const k=developmentKey();
+ const plans={
+  technical:{name:"Technika",keys:["pass","drib"]},
+  shooting:{name:"Strzelecki",keys:["shoot","drib"]},
+  physical:{name:"Motoryka",keys:["pace","phys"]},
+  individual:{name:"Indywidualny",keys:developmentKey() instanceof Array?developmentKey():[developmentKey()]}
+ };
+ let plan=plans[type]||plans.individual;
+ let keys=Array.isArray(plan.keys)?plan.keys:[plan.keys];
+ if(type==="individual") keys=[developmentKey()];
+ const k=keys[rnd(0,keys.length-1)];
  const ageFactor=g.age<=22?1:g.age<=25?.8:g.age<=28?.55:g.age<=30?.3:0;
  const gap=clamp((g.potential-g[k])/15,.08,1);
- const intensity=g.trainingCount===0?1:.65;
- const chance=.72*ageFactor*gap*intensity;
- const gain=(g[k]<g.potential && Math.random()<chance)?(Math.random()<.12?2:1):0;
- const fatigue=g.trainingCount===0?rnd(9,12):rnd(14,18);
+ const intensity=g.trainingCount===0?1:.58;
+ const chance=.62*ageFactor*gap*intensity;
+ const gain=(g[k]<g.potential && Math.random()<chance)?(Math.random()<.08?2:1):0;
+ const fatigue=g.trainingCount===0?rnd(8,12):rnd(13,18);
  g.condition=clamp(g.condition-fatigue,0,100);
  g.form=clamp(g.form+(g.condition>=45?3:1),0,100);
- g.trainingCount++;g.trainingPoints++;
- if(gain){g[k]=Math.min(g.potential,g[k]+gain);g.value*=1.004+gain*.002;log(`🏋️ Trening: <b>${k}</b> +${gain}. Kondycja -${fatigue}.`)}
- else log(`🏋️ Trening: <b>${k}</b>. Dziś bez trwałego wzrostu. Kondycja -${fatigue}.`);
+ g.trainingCount++;
+ g.trainingPoints++;
+ if(gain){g[k]=Math.min(g.potential,g[k]+gain);g.value*=1.003+gain*.002;log(`🏋️ <b>${plan.name}</b>: ${k} +${gain}. Kondycja -${fatigue}.`)}
+ else log(`🏋️ <b>${plan.name}</b>: pracujesz nad ${k}. Bez trwałego wzrostu. Kondycja -${fatigue}.`);
+ if(g.condition<30) log("⚠️ Jesteś mocno zmęczony. Przed meczem warto odpocząć.");
  render();
 }
 function rest(){
@@ -327,24 +340,60 @@ function renderPlayer(){
  const avgR=g.apps?(g.ratingSum/g.apps).toFixed(2):"—";
  document.getElementById("development").innerHTML=`<div class="row"><div><div class="rowTitle">OVR</div><div class="rowSub">Średnia wszystkich atrybutów</div></div><b>${avg()}</b></div>
  <div class="row"><div><div class="rowTitle">Potencjał</div><div class="rowSub">Ukryty limit rozwoju</div></div><b>???</b></div>
- <div class="row"><div><div class="rowTitle">Treningi</div><div class="rowSub">Przed następnym meczem</div></div><b>${g.trainingCount}/2</b></div>`;
+ <div class="row"><div><div class="rowTitle">Treningi</div><div class="rowSub">Przed następnym meczem</div></div><b>${g.trainingCount}/2</b></div><div class="row"><div><div class="rowTitle">Kondycja</div><div class="rowSub">Wpływa na minuty i występ</div></div><b>${g.condition}%</b></div>`;
  document.getElementById("seasonStats").innerHTML=`<div class="row"><div>Występy</div><b>${g.apps}</b></div><div class="row"><div>Minuty</div><b>${g.minutes}</b></div><div class="row"><div>Gole</div><b>${g.goals}</b></div><div class="row"><div>Asysty</div><b>${g.assists}</b></div><div class="row"><div>Średnia ocena</div><b>${avgR}</b></div>`;
 }
-function generateOffer(){
- const higher=clubs.filter(c=>c.strength>g.club.strength && c.strength<=avg()+16);
+function generateInterest(){
+ const recent=g.history.slice(0,4);
+ const avgRecent=recent.length?recent.reduce((a,x)=>a+Number(x.rating||0),0)/recent.length:0;
+ const higher=clubs.filter(c=>c.strength>g.club.strength && c.strength<=avg()+18 && c.name!==g.club.name);
  if(!higher.length)return;
- const c=higher[rnd(0,higher.length-1)];
- if(g.offers.some(o=>o.name===c.name))return;
- const offer={name:c.name,strength:c.strength,salary:c.salary,status:c.strength>avg()+7?"Rezerwowy":"Rotacja"};
- g.offers.push(offer);log(`📞 <b>${c.name}</b> zainteresował się Tobą. Oferta: ${money(c.salary)} zł/mies.`);
+ if(avgRecent && avgRecent<6.4 && g.apps>1)return;
+ const available=higher.filter(c=>!g.interests.some(o=>o.name===c.name&&o.stage!=="rejected")&&!g.offers.some(o=>o.name===c.name));
+ if(!available.length)return;
+ const c=available[rnd(0,available.length-1)];
+ const strengthGap=c.strength-avg();
+ const chance=clamp(.25+(avgRecent-6.2)*.12+(g.age<=21?.15:0)+(g.form-70)/250, .12,.8);
+ if(Math.random()>chance)return;
+ g.interests.push({name:c.name,strength:c.strength,salary:c.salary,stage:"interest",age:0,reason:avgRecent>=7.2?"Świetne występy":"Dobra forma i potencjał"});
+ log(`👀 <b>${c.name}</b> zaczyna Cię obserwować. To na razie zainteresowanie — jeszcze nie oferta.`);
+}
+function advanceTransferStories(){
+ g.interests.forEach(o=>{
+  if(o.stage==="rejected")return;
+  o.age++;
+  if(o.stage==="interest" && o.age>=1){
+   const chance=clamp(.55+(g.form-70)/160+(avg()-o.strength)/35,.2,.88);
+   if(Math.random()<chance){o.stage="trial";o.age=0;log(`📩 <b>${o.name}</b> zaprasza Cię na trening testowy. Przed Tobą szansa na transfer.`)}
+   else if(Math.random()<.18){o.stage="rejected";log(`ℹ️ ${o.name} na razie zakończyła obserwację. Twoje występy nie wystarczyły do kolejnego kroku.`)}
+  }else if(o.stage==="testing" && o.age>=1){
+   const chance=clamp(.58+(g.form-70)/130+(avg()-o.strength)/30+(g.condition-60)/300,.18,.9);
+   if(Math.random()<chance){
+    const status=o.strength>avg()+7?"Rezerwowy":avg()>=o.strength?"Podstawowy":"Rotacja";
+    g.offers.push({name:o.name,strength:o.strength,salary:o.salary,status,source:"trial"});o.stage="offer";o.age=0;
+    log(`🟢 <b>${o.name}</b> jest zadowolona z testów i składa Ci konkretną ofertę.`);
+   }else if(Math.random()<.28){o.stage="rejected";log(`❌ ${o.name} podziękowała za testy, ale na razie nie proponuje kontraktu.`)}
+  }
+ });
 }
 function renderOffers(){
  const el=document.getElementById("offers");
- if(!g.offers.length){el.innerHTML="<p class='muted'>Na razie brak konkretnych ofert. Dobre występy zwiększą zainteresowanie.</p>";return}
- el.innerHTML=g.offers.map((o,i)=>`<div class="row"><div><div class="rowTitle">${esc(o.name)}</div><div class="rowSub">${o.status} • ${money(o.salary)} zł/mies.</div></div><div class="actions" style="margin:0"><button onclick="acceptOffer(${i})">Przejdź</button></div></div>`).join("");
+ const rows=[];
+ g.interests.filter(o=>o.stage!=="rejected"&&o.stage!=="offer").forEach(o=>{
+  const stage=o.stage==="interest"?"Obserwuje":(o.stage==="trial"?"Zaproszenie na testy":"Testy trwają");
+  const cls=o.stage==="interest"?"yellow":"blue";
+  const action=o.stage==="trial"?`<button onclick="acceptTrial('${esc(o.name)}')">Jedź na testy</button>`:`<span class="stage ${cls}">${stage}</span>`;
+  rows.push(`<div class="row"><div><div class="rowTitle">${esc(o.name)}</div><div class="rowSub">${esc(o.reason)} • ${stage}</div></div><div>${action}</div></div>`);
+ });
+ g.offers.forEach((o,i)=>rows.push(`<div class="row"><div><div class="rowTitle">${esc(o.name)}</div><div class="rowSub"><span class="stage green">Konkretna oferta</span> • ${o.status} • ${money(o.salary)} zł/mies.</div></div><div class="actions" style="margin:0"><button onclick="acceptOffer(${i})">Podpisz</button></div></div>`));
+ el.innerHTML=rows.length?rows.join(""):"<p class='muted'>Na razie nikt Cię konkretnie nie chce. Dobre występy mogą rozpocząć obserwację.</p>";
+}
+function acceptTrial(name){
+ const o=g.interests.find(x=>x.name===name);if(!o||o.stage!=="trial")return;
+ o.stage="testing";o.age=0;g.form=clamp(g.form+2,0,100);log(`🧪 Pojechałeś na trening testowy do <b>${o.name}</b>. Teraz klub oceni Cię po kolejnym etapie.`);render();
 }
 function acceptOffer(i){
- const o=g.offers[i];const old=g.club.name;g.club={name:o.name,strength:o.strength,salary:o.salary};g.value*=1.2;g.form=80;g.offers=[];g.schedule=[];makeSchedule();g.table=leagueTeams.map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));
+ const o=g.offers[i];const old=g.club.name;g.club={name:o.name,strength:o.strength,salary:o.salary};g.value*=1.2;g.form=80;g.offers=[];g.interests=[];g.schedule=[];makeSchedule();g.table=leagueTeams.map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));g.condition=clamp(g.condition+10,0,100);g.trainingCount=0;
  log(`🔄 Transfer! ${old} → <b>${g.club.name}</b>. Pensja: ${money(g.club.salary)} zł/mies.`);go("home");
 }
 function renderFinance(){
@@ -355,12 +404,12 @@ function renderForm(){
  if(!g.history.length){el.innerHTML="<p class='muted'>Jeszcze nie rozegrałeś meczu.</p>";return}
  el.innerHTML=g.history.slice(0,5).map(x=>`<div class="row"><div><div class="rowTitle">${x.gf}:${x.ga} vs ${esc(x.opp)}</div><div class="rowSub">${x.minutes} min • ⚽ ${x.goals} • 🅰️ ${x.assists}</div></div><b>${x.rating}</b></div>`).join("");
 }
-function saveGame(){localStorage.setItem("odBKlasy03",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
+function saveGame(){localStorage.setItem("odBKlasy04",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
 function loadGame(){
- const x=localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
- g=JSON.parse(x);g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
+ const x=localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
+ g=JSON.parse(x);g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;g.interests=g.interests??[];g.offers=g.offers??[];document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
 }
-function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy03");location.reload()}}
+function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy04");localStorage.removeItem("odBKlasy03");location.reload()}}
 function openModal(content){document.getElementById("modalBox").innerHTML=content;document.getElementById("modal").classList.remove("hidden")}
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
