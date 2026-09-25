@@ -1,3 +1,3 @@
-# Od B-klasy MVP 0.6
+Od B-klasy 0.9 — poprawki treningów i kontuzji.
 
-Dodano Ekstraklasę 2026/27 (18 klubów), pełny terminarz dom/wyjazd oraz obsługę większych tabel.
+Trening: 2/2 przed meczem, reset do 0/2 po meczu. Kontuzja: rehabilitacja +7 dni przez przycisk, brak automatycznego skracania kontuzji po meczu.
