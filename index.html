@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Od B-klasy">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Kariera: Od B-klasy — MVP 0.2</title>
+<title>Kariera: Od B-klasy — MVP 0.3</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:#070b16;color:#edf2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
@@ -46,14 +46,14 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">MVP 0.2</div></header>
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">MVP 0.3</div></header>
 
 <div id="create" class="card">
 <h1>Stwórz zawodnika</h1>
 <p class="muted">Nie zarządzasz klubem. Zarządzasz własną karierą. Zaczynasz jako młody zawodnik lokalnej piłki.</p>
-div class="formgrid">
+<div class="formgrid">
 <div class="field"><label>Imię i nazwisko<input id="name" value="Patryk Kowalski"></label></div>
-<div class="field"><label>Wiek<select id="age"><option>17</option><option selected>18</option><option>19</option><option>20</option><option>21</option></select></label></div>
+<div class="field"><label>Wiek<select id="age"><option>16</option><option selected>17</option><option>18</option><option>19</option><option>20</option><option>21</option></select></label></div>
 <div class="field"><label>Pozycja<select id="pos"><option>Napastnik</option><option>Pomocnik</option><option>Obrońca</option><option>Bramkarz</option></select></label></div>
 <div class="field"><label>Region<select id="region"><option>Warszawa</option><option>Radom</option><option>Płock</option><option>Ostrołęka</option></select></label></div>
 </div>
@@ -80,7 +80,7 @@ div class="formgrid">
 </div>
 <hr style="border-color:#26314d;margin:18px 0">
 <div>Forma <b id="form"></b>%</div><div class="bar"><div id="formbar" class="fill"></div></div>
-<p>💰 Wartość: <b id="value"></b> zł</p><p>💵 Pensja: <b id="salary"></b> zł/mies.</p>
+<p>🫁 Kondycja <b id="condition"></b>%</p><div class="bar"><div id="conditionbar" class="fill"></div></div><p>💰 Wartość: <b id="value"></b> zł</p><p>💵 Pensja: <b id="salary"></b> zł/mies.</p>
 <p>🧑 Wiek: <b id="ageView"></b></p><p>🎯 Potencjał: <b id="potView">???</b></p>
 </aside>
 
@@ -164,8 +164,8 @@ function startGame(){
  const base=rnd(39,48), potential=clamp(base+rnd(20,31)-(age-17)*3,52,78);
  g={name:document.getElementById("name").value||"Nowy zawodnik",age,pos,region:document.getElementById("region").value,
  pace:rnd(base-2,base+9),shoot:rnd(base-6,base+5),pass:rnd(base-4,base+7),drib:rnd(base-2,base+8),phys:rnd(base-1,base+9),def:rnd(22,base+2),
- potential,form:75,value:15000,season:"2026/27",club:clubs[0],apps:0,starts:0,goals:0,assists:0,minutes:0,ratingSum:0,
- round:0,money:0,contractMonths:12,history:[],schedule:[],offers:[],trainingPoints:0};
+ potential,form:75,condition:100,value:15000,season:"2026/27",club:clubs[0],apps:0,starts:0,goals:0,assists:0,minutes:0,ratingSum:0,
+ round:0,money:0,contractMonths:12,history:[],schedule:[],offers:[],trainingPoints:0,trainingCount:0};
  makeSchedule();
  g.money=0;
  document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");
@@ -180,6 +180,7 @@ function render(){
  document.getElementById("ovr").textContent=avg();
  ["pace","shoot","pass","drib","phys","def"].forEach(x=>document.getElementById(x).textContent=g[x]);
  document.getElementById("form").textContent=g.form;document.getElementById("formbar").style.width=g.form+"%";
+ document.getElementById("condition").textContent=g.condition+"";document.getElementById("conditionbar").style.width=g.condition+"%";
  document.getElementById("value").textContent=money(g.value);document.getElementById("salary").textContent=money(g.club.salary);
  document.getElementById("ageView").textContent=g.age;document.getElementById("season").textContent=g.season;document.getElementById("club").textContent=g.club.name;
  document.getElementById("apps").textContent=g.apps;document.getElementById("goals").textContent=g.goals;
@@ -197,6 +198,8 @@ function render(){
   document.getElementById("matchDate").textContent="Brak kolejnych meczów";document.getElementById("matchStatus").textContent="Podsumowanie";
   document.getElementById("matchBtn").disabled=false;document.getElementById("matchBtn").textContent="🏆 Podsumuj sezon";
  }
+ const canTrain=g.trainingCount<2 && g.condition>=35;
+ document.querySelectorAll("button[onclick='train()']").forEach(b=>{b.disabled=!canTrain;b.textContent=canTrain?"🏋️ Trening":(g.trainingCount>=2?"🏁 Limit treningów":"😴 Za niska kondycja")});
  renderSchedule();renderTable();renderPlayer();renderOffers();renderFinance();renderForm();
 }
 function renderSchedule(){
@@ -220,8 +223,8 @@ function simulateOtherGames(){
 function playMatch(){
  const m=currentMatch();if(!m){finishSeason();return}
  g.round=m.round;
- const strengthDiff=avg()+Math.round(g.form/10)-g.club.strength;
- const starterChance=clamp(45+strengthDiff*5+g.form/5,15,92);
+ const strengthDiff=avg()+Math.round(g.form/10)+(g.condition-70)/12-g.club.strength;
+ const starterChance=clamp(45+strengthDiff*5+g.form/5+(g.condition-70)*0.35,10,94);
  const starts=Math.random()*100<starterChance;
  const minutes=starts?rnd(65,90):rnd(0,35);
  const opponent=clubs.find(c=>c.name===m.opponent)||{strength:rnd(40,55)};
@@ -241,6 +244,13 @@ function playMatch(){
  m.played=true;m.result=true;m.goalsFor=gf;m.goalsAgainst=ga;m.performance=minutes?rating.toFixed(1):"—";
  g.apps++;g.minutes+=minutes;g.starts+=starts?1:0;g.goals+=goals;g.assists+=assists;g.ratingSum+=rating;
  g.form=clamp(g.form+rnd(-4,5)+(rating>=7.5?4:rating<6?-4:0),30,100);
+ const fatigue=minutes?clamp(Math.round(minutes*.16)+rnd(2,6),8,22):rnd(1,4);
+ g.condition=clamp(g.condition-fatigue,0,100);
+ g.trainingCount=0;
+ if(minutes>=45 && rating>=7.2 && g.age<=28 && avg()<g.potential && Math.random()<growthChance()){
+  const growthKey=developmentKey(); const gain=Math.random()<0.85?1:2; g[growthKey]=Math.min(g.potential,g[growthKey]+gain);
+  log(`📈 Dobry występ rozwija Cię: <b>${growthKey}</b> +${gain}.`);
+ }
  g.value*=1+(rating>=7.5?.025:rating<6?.002:.01);
  g.money+=g.club.salary/10+(goals*100)+(assists*60);
  simulateOtherGames();updatePlayerTable(m,gf,ga);
@@ -270,22 +280,43 @@ function finishSeason(){
  if(promoted && clubs.findIndex(c=>c.name===g.club.name)<clubs.length-1){let i=clubs.findIndex(c=>c.name===g.club.name);g.club=clubs[Math.min(i+1,clubs.length-1)];report+="<p class='greenText'>🚀 Klub awansował. Wchodzisz poziom wyżej!</p>";}
  else if(relegated){report+="<p class='redText'>⬇️ Klub spadł. Nowy sezon zaczniecie na niższym poziomie.</p>";}
  else report+="<p>➡️ Klub pozostaje na obecnym poziomie.</p>";
- g.age++;g.season=nextSeason(g.season);g.apps=0;g.starts=0;g.goals=0;g.assists=0;g.minutes=0;g.ratingSum=0;g.round=0;g.form=82;g.contractMonths=Math.max(0,g.contractMonths-12);
+ g.age++;g.season=nextSeason(g.season);g.apps=0;g.starts=0;g.goals=0;g.assists=0;g.minutes=0;g.ratingSum=0;g.round=0;g.form=82;g.condition=100;g.trainingCount=0;g.contractMonths=Math.max(0,g.contractMonths-12);
  const growth=Math.random()<.75?rnd(1,2):0;
- if(g.age<=30){["pace","shoot","pass","drib","phys","def"].forEach(k=>{if(avg()<g.potential&&Math.random()<.55)g[k]=Math.min(g.potential,g[k]+growth)})}
+ if(g.age<=30 && growth){for(let i=0;i<2;i++){if(avg()<g.potential&&Math.random()<.55){const k=developmentKey();g[k]=Math.min(g.potential,g[k]+growth)}}}
  g.value*=1.05;makeSchedule();g.table=leagueTeams.map(name=>({name,pts:0,gf:0,ga:0,m:0,w:0,d:0,l:0}));
  g.offers=[];log(report.replace(/<[^>]+>/g," "));openModal(report+"<div class='actions'><button onclick='closeModal()'>Rozpocznij nowy sezon</button></div>");render();
 }
 function nextSeason(s){let y=+s.slice(0,4)+1;return `${y}/${String(y+1).slice(2)}`}
+function developmentKey(){
+ const keys=g.pos==="Napastnik"?["shoot","pace","drib"]:g.pos==="Pomocnik"?["pass","drib","shoot"]:g.pos==="Obrońca"?["def","phys","pace"]:["def","phys","pass"];
+ return keys[rnd(0,keys.length-1)];
+}
+function growthChance(){
+ const ageFactor=g.age<=22?1:g.age<=25?.8:g.age<=28?.55:g.age<=30?.3:0;
+ const gap=clamp((g.potential-avg())/15,.08,1);
+ return .18*ageFactor*gap;
+}
 function train(){
- const key=g.pos==="Napastnik"?["shoot","pace","drib"]:g.pos==="Pomocnik"?["pass","drib","shoot"]:g.pos==="Obrońca"?["def","phys","pace"]:["def","phys","pass"];
- const k=key[rnd(0,key.length-1)];
- const gain=(avg()<g.potential&&g.age<31)?rnd(1,2):rnd(0,1);
- g[k]=Math.min(90,g[k]+gain);g.form=clamp(g.form+6,0,100);g.trainingPoints++;g.value*=1.008;
- log(`🏋️ Trening: <b>${k}</b> +${gain}. Forma +6.`);
+ if(g.trainingCount>=2){log("🏁 Wykorzystałeś już 2 treningi przed tym meczem.");return}
+ if(g.condition<35){log("😴 Kondycja jest zbyt niska na kolejny trening. Odpocznij.");return}
+ const k=developmentKey();
+ const ageFactor=g.age<=22?1:g.age<=25?.8:g.age<=28?.55:g.age<=30?.3:0;
+ const gap=clamp((g.potential-g[k])/15,.08,1);
+ const intensity=g.trainingCount===0?1:.65;
+ const chance=.72*ageFactor*gap*intensity;
+ const gain=(g[k]<g.potential && Math.random()<chance)?(Math.random()<.12?2:1):0;
+ const fatigue=g.trainingCount===0?rnd(9,12):rnd(14,18);
+ g.condition=clamp(g.condition-fatigue,0,100);
+ g.form=clamp(g.form+(g.condition>=45?3:1),0,100);
+ g.trainingCount++;g.trainingPoints++;
+ if(gain){g[k]=Math.min(g.potential,g[k]+gain);g.value*=1.004+gain*.002;log(`🏋️ Trening: <b>${k}</b> +${gain}. Kondycja -${fatigue}.`)}
+ else log(`🏋️ Trening: <b>${k}</b>. Dziś bez trwałego wzrostu. Kondycja -${fatigue}.`);
  render();
 }
-function rest(){g.form=clamp(g.form+10,0,100);log("🛌 Odpoczynek. Forma +10. Nie rozwijasz atrybutów.");render()}
+function rest(){
+ const recovery=rnd(12,18);g.condition=clamp(g.condition+recovery,0,100);g.form=clamp(g.form+5,0,100);
+ log(`🛌 Odpoczynek. Kondycja +${recovery}, forma +5. Treningów przed meczem: ${g.trainingCount}/2.`);render()
+}
 function renderTable(){
  const el=document.getElementById("tableWrap");if(!g.table){el.innerHTML="<p class='muted'>Tabela pojawi się po pierwszej kolejce.</p>";return}
  const sorted=[...g.table].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga));
@@ -296,7 +327,7 @@ function renderPlayer(){
  const avgR=g.apps?(g.ratingSum/g.apps).toFixed(2):"—";
  document.getElementById("development").innerHTML=`<div class="row"><div><div class="rowTitle">OVR</div><div class="rowSub">Średnia wszystkich atrybutów</div></div><b>${avg()}</b></div>
  <div class="row"><div><div class="rowTitle">Potencjał</div><div class="rowSub">Ukryty limit rozwoju</div></div><b>???</b></div>
- <div class="row"><div><div class="rowTitle">Treningi</div></div><b>${g.trainingPoints}</b></div>`;
+ <div class="row"><div><div class="rowTitle">Treningi</div><div class="rowSub">Przed następnym meczem</div></div><b>${g.trainingCount}/2</b></div>`;
  document.getElementById("seasonStats").innerHTML=`<div class="row"><div>Występy</div><b>${g.apps}</b></div><div class="row"><div>Minuty</div><b>${g.minutes}</b></div><div class="row"><div>Gole</div><b>${g.goals}</b></div><div class="row"><div>Asysty</div><b>${g.assists}</b></div><div class="row"><div>Średnia ocena</div><b>${avgR}</b></div>`;
 }
 function generateOffer(){
@@ -324,12 +355,12 @@ function renderForm(){
  if(!g.history.length){el.innerHTML="<p class='muted'>Jeszcze nie rozegrałeś meczu.</p>";return}
  el.innerHTML=g.history.slice(0,5).map(x=>`<div class="row"><div><div class="rowTitle">${x.gf}:${x.ga} vs ${esc(x.opp)}</div><div class="rowSub">${x.minutes} min • ⚽ ${x.goals} • 🅰️ ${x.assists}</div></div><b>${x.rating}</b></div>`).join("");
 }
-function saveGame(){localStorage.setItem("odBKlasy02",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
+function saveGame(){localStorage.setItem("odBKlasy03",JSON.stringify(g));log("💾 Zapisano karierę na tym urządzeniu.")}
 function loadGame(){
- const x=localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
- g=JSON.parse(x);document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
+ const x=localStorage.getItem("odBKlasy03")||localStorage.getItem("odBKlasy02");if(!x){alert("Nie ma zapisu.");return}
+ g=JSON.parse(x);g.condition=g.condition??100;g.trainingCount=g.trainingCount??0;g.trainingPoints=g.trainingPoints??0;document.getElementById("create").classList.add("hidden");document.getElementById("game").classList.remove("hidden");log("📂 Wczytano zapis.");render();
 }
-function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy02");location.reload()}}
+function resetGame(){if(confirm("Usunąć obecną karierę?")){localStorage.removeItem("odBKlasy03");location.reload()}}
 function openModal(content){document.getElementById("modalBox").innerHTML=content;document.getElementById("modal").classList.remove("hidden")}
 function closeModal(){document.getElementById("modal").classList.add("hidden")}
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
