@@ -1,4 +1,4 @@
-# Od B-klasy — World 1.8.5
+# Od B-klasy — World 1.8.7
 
 - Tryb kariery wybierany na starcie: mecz po meczu, po rundzie albo po całym sezonie.
 - Tryb rundy/sezonu automatyzuje trening i obsługę wydarzeń podczas symulacji, a po symulacji pokazuje najważniejsze zdarzenia.
