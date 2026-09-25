@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Od B-klasy">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Kariera: Od B-klasy — World 1.8.7</title>
+<title>Kariera: Od B-klasy — World 1.8.8</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:#070b16;color:#edf2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
@@ -47,7 +47,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.8.7</div></header>
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.8.8</div></header>
 
 <div id="create" class="card">
 <h1>Stwórz zawodnika</h1>
@@ -365,28 +365,39 @@ function simulateSeasonBatch(){
   if(!g||!g.simulating)return;
   const mode=g.simulationMode,target=g.simulationTarget;
   let steps=0;
-  while(steps<4){
-    const prog=simulationProgress();
-    if(mode!=="season"&&prog.played>=target)break;
-    const m=currentMatch();
-    if(!m)break;
-    const before=prog.played;
-    simulationPreparation();
-    playMatch();
-    g.simulationFixtures++;
-    steps++;
-    const after=simulationProgress().played;
-    if(after===before && !currentMatch())break;
+  try{
+    while(steps<3){
+      const prog=simulationProgress();
+      if(mode!=="season"&&prog.played>=target)break;
+      const m=currentMatch();
+      if(!m)break;
+      const before=prog.played;
+      simulationPreparation();
+      if(g.academy)playYouthMatch();else playMatch();
+      g.simulationFixtures=(g.simulationFixtures||0)+1;
+      steps++;
+      const after=simulationProgress().played;
+      if(after===before && !currentMatch())break;
+    }
+  }catch(err){
+    console.error("Błąd symulacji",err);
+    g.simulating=false;
+    g.simulationError=String(err?.message||err);
+    log(`⚠️ <b>Symulacja zatrzymana.</b> Gra nie utraciła zapisu. Spróbuj ponownie od następnego meczu.`);
+    render();
+    openModal(`<h2>⚠️ Symulacja zatrzymana</h2><p>Wystąpił błąd podczas symulacji. Twoja kariera została zachowana.</p><div class="notice">Możesz kontynuować <b>mecz po meczu</b> albo spróbować ponownie.</div><div class="actions"><button onclick="closeModal();render()">OK</button></div>`);
+    return;
   }
   const p=simulationProgress();
-  const done=mode!=="season"?p.played>=target:g.schedule.every(x=>x.played);
-  if(done || !currentMatch()){
+  const noCurrent=!currentMatch();
+  const done=mode!=="season"?p.played>=target:(g.schedule||[]).length>0 && g.schedule.every(x=>x.played);
+  if(done || (noCurrent&&p.played>=target)){
     g.simulating=false;
     const leagueDone=p.played-(g.simulationLeagueBefore||0);
     const fixtures=g.simulationFixtures||0;
     log(`⚡ <b>Symulacja ${simulationLabel(mode)}:</b> ${fixtures} spotkań, liga +${leagueDone}.`);
-    if(mode==="season"&&g.schedule.every(x=>x.played)){finishSeason();return}
-    if(mode!=="season"&&g.simEvents?.length){
+    if(mode==="season"&&done){finishSeason();return}
+    if(g.simEvents?.length){
       const visible=g.simEvents.slice(0,8).map(x=>`<div>• ${x}</div>`).join("");
       const extra=g.simEvents.length>8?`<div class="muted" style="margin-top:6px">… oraz ${g.simEvents.length-8} innych zdarzeń.</div>`:"";
       openModal(`<h2>📋 Podsumowanie symulacji</h2><p><b>${simModeLabel()}</b></p>${visible}${extra}<div class="actions"><button onclick="closeModal();render()">OK</button></div>`);
@@ -396,7 +407,7 @@ function simulateSeasonBatch(){
     return;
   }
   updateSimulationUI(mode,target);
-  setTimeout(()=>simulateSeasonBatch(),20);
+  setTimeout(()=>simulateSeasonBatch(),40);
 }
 function showSeasonButton(){document.getElementById("event").classList.remove("hidden");document.getElementById("event").innerHTML="<h3>🏁 Sezon zakończony</h3><div>Masz komplet meczów. Podsumuj sezon, aby przejść do kolejnego.</div><div class='actions'><button onclick='finishSeason()'>🏆 Podsumuj sezon</button></div>"}
 function seasonOfferCard(o,i){return `<div class="card" style="margin-top:8px;padding:12px"><div class="rowTitle">${esc(o.name)}</div><div class="rowSub">${o.foreign?o.country:"🇵🇱 Polska"} • ${esc(o.league||"")}</div><div class="badges"><span class="badge">${o.label||o.role||"Oferta"}</span><span class="badge">⏱️ ${o.predictedMinutes||"—"} min</span><span class="badge">💰 ${money(o.salary||0)} zł/mies.</span><span class="badge">📄 ${o.contractYears||2} lata</span></div><div class="rowSub" style="margin-top:7px">🎁 Premia za występ: <b>${o.bonus||0} zł</b></div><div class="actions"><button onclick="acceptSeasonOffer(${i})">🔄 Przenieś się</button><button class="secondary" onclick="removeSeasonOffer(${i})">❌ Odrzuć</button></div></div>`}
@@ -460,8 +471,8 @@ function renderFinance(){document.getElementById("finance").innerHTML=`<div clas
 function renderContract(){document.getElementById("contractInfo").innerHTML=`<div class="row"><div>Typ</div><b>${g.contractType==="junior"?"Kontrakt juniorski":"Kontrakt seniorski"}</b></div><div class="row"><div>Pozostało</div><b>${Math.ceil(g.contractMonths/12)} lat</b></div>`}
 function renderInjury(){document.getElementById("injuryInfo").innerHTML=g.injury?`<div class="notice">🏥 ${g.injury.type} kontuzja • około <b>${g.injury.days} dni</b> przerwy.</div>`:`<div class="notice">🟢 Zdrowy. Brak aktywnej kontuzji.</div>`}
 function renderForm(){const el=document.getElementById("formList");el.innerHTML=g.history.length?g.history.slice(0,5).map(x=>`<div class="row"><div>${x.gf}:${x.ga} vs ${esc(x.opp)}<div class="rowSub">${x.minutes} min • ⚽ ${x.goals} • 🅰️ ${x.assists}</div></div><b>${x.rating}</b></div>`).join(""):"<p class='muted'>Jeszcze nie rozegrałeś meczu.</p>";renderContract();renderInjury()}
-function saveGame(){localStorage.setItem("odBKlasy187",JSON.stringify(g));log("💾 Zapisano karierę.")}
-function loadGame(){const x=localStorage.getItem("odBKlasy187")||localStorage.getItem("odBKlasy186")||localStorage.getItem("odBKlasy185")||localStorage.getItem("odBKlasy184")||localStorage.getItem("odBKlasy183")||localStorage.getItem("odBKlasy18")||localStorage.getItem("odBKlasy17")||localStorage.getItem("odBKlasy16")||localStorage.getItem("odBKlasy15")||localStorage.getItem("odBKlasy13")||localStorage.getItem("odBKlasy12")||localStorage.getItem("odBKlasy08")||localStorage.getItem("odBKlasy07")||localStorage.getItem("odBKlasy061")||localStorage.getItem("odBKlasy06")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03");if(!x){alert("Nie ma zapisu.");return}g=JSON.parse(x);g.leagueLevel=clamp(Number(g.leagueLevel??0),0,allLeagues.length-1);g.club=getClubData(g.club?.name,g.leagueLevel);g.condition=g.condition??100;g.trainingCount=clamp(Number(g.trainingCount??0),0,2);g.morale=clamp(Number(g.morale??72),0,100);g.coachTrust=clamp(Number(g.coachTrust??45),0,100);g.careerHistory=g.careerHistory??[];g.careerEvents=g.careerEvents??[];g.cupHistory=g.cupHistory??[];g.cup=g.cup??null;g.euroCompetition=g.euroCompetition??null;g.europe=g.europe??null;g.talentTier=g.talentTier??"normal";g.injury=g.injury??null;g.interests=g.interests??[];g.offers=g.offers??[];g.loans=g.loans??[];g.loan=g.loan??null;g.contractType=g.contractType??(g.age<18?"junior":"senior");g.pendingStartOffers=g.pendingStartOffers??[];g.rep=g.rep??{team:null,caps:0,goals:0,assists:0,callups:0,pending:false,history:[]};g.academy=!!g.academy;g.simMode=g.simMode||"match";g.simEvents=g.simEvents||[];g.pendingSeasonOffers=g.pendingSeasonOffers||[];g.seasonEndReport=g.seasonEndReport||"";g.seasonMatches=g.seasonMatches||[];if(g.academy&&!g.schedule?.length)makeYouthSchedule();if(!g.world&&!g.academy){initWorld()}if(!g.cup&&!g.academy){initCup()}if(g.euroCompetition&&!g.europe&&!g.academy){initEurope()}if(!g.academy&&!g.schedule?.some(x=>x.competition==="Liga"))makeSchedule();if(!g.academy&&(!g.world||!g.world[g.leagueLevel]))initWorld();if(!g.academy){
+function saveGame(){localStorage.setItem("odBKlasy188",JSON.stringify(g));log("💾 Zapisano karierę.")}
+function loadGame(){const x=localStorage.getItem("odBKlasy188")||localStorage.getItem("odBKlasy187")||localStorage.getItem("odBKlasy186")||localStorage.getItem("odBKlasy185")||localStorage.getItem("odBKlasy184")||localStorage.getItem("odBKlasy183")||localStorage.getItem("odBKlasy18")||localStorage.getItem("odBKlasy17")||localStorage.getItem("odBKlasy16")||localStorage.getItem("odBKlasy15")||localStorage.getItem("odBKlasy13")||localStorage.getItem("odBKlasy12")||localStorage.getItem("odBKlasy08")||localStorage.getItem("odBKlasy07")||localStorage.getItem("odBKlasy061")||localStorage.getItem("odBKlasy06")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03");if(!x){alert("Nie ma zapisu.");return}g=JSON.parse(x);g.simulating=false;g.simulationMode=null;g.simulationTarget=null;g.simulationFixtures=0;g.leagueLevel=clamp(Number(g.leagueLevel??0),0,allLeagues.length-1);g.club=getClubData(g.club?.name,g.leagueLevel);g.condition=g.condition??100;g.trainingCount=clamp(Number(g.trainingCount??0),0,2);g.morale=clamp(Number(g.morale??72),0,100);g.coachTrust=clamp(Number(g.coachTrust??45),0,100);g.careerHistory=g.careerHistory??[];g.careerEvents=g.careerEvents??[];g.cupHistory=g.cupHistory??[];g.cup=g.cup??null;g.euroCompetition=g.euroCompetition??null;g.europe=g.europe??null;g.talentTier=g.talentTier??"normal";g.injury=g.injury??null;g.interests=g.interests??[];g.offers=g.offers??[];g.loans=g.loans??[];g.loan=g.loan??null;g.contractType=g.contractType??(g.age<18?"junior":"senior");g.pendingStartOffers=g.pendingStartOffers??[];g.rep=g.rep??{team:null,caps:0,goals:0,assists:0,callups:0,pending:false,history:[]};g.academy=!!g.academy;g.simMode=g.simMode||"match";g.simEvents=g.simEvents||[];g.pendingSeasonOffers=g.pendingSeasonOffers||[];g.seasonEndReport=g.seasonEndReport||"";g.seasonMatches=g.seasonMatches||[];if(g.academy&&!g.schedule?.length)makeYouthSchedule();if(!g.world&&!g.academy){initWorld()}if(!g.cup&&!g.academy){initCup()}if(g.euroCompetition&&!g.europe&&!g.academy){initEurope()}if(!g.academy&&!g.schedule?.some(x=>x.competition==="Liga"))makeSchedule();if(!g.academy&&(!g.world||!g.world[g.leagueLevel]))initWorld();if(!g.academy){
   g.schedule=(g.schedule||[]).map(x=>({...x,competition:x.competition||"Liga"}));
   const expectedCup=countryCupName();
   if(!g.cup){initCup()}
