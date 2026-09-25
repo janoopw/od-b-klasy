@@ -1,3 +1,3 @@
-Od B-klasy — World 1.1
+# Od B-klasy World 1.4
 
-Build based on working World 0.9 with isolated transfer-market improvements.
+Start kariery: 6 losowych ofert startowych z różnych poziomów. Każda oferta pokazuje rolę, przewidywane minuty, pensję, bonus i długość kontraktu. Gracz nie wybiera dowolnego klubu.
