@@ -1,3 +1,3 @@
-Od B-klasy 0.9 — poprawki treningów i kontuzji.
+Od B-klasy — World 1.1
 
-Trening: 2/2 przed meczem, reset do 0/2 po meczu. Kontuzja: rehabilitacja +7 dni przez przycisk, brak automatycznego skracania kontuzji po meczu.
+Build based on working World 0.9 with isolated transfer-market improvements.

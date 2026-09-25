@@ -1,7 +1,7 @@
 {
   "name": "Kariera: Od B-klasy",
   "short_name": "Od B-klasy",
-  "description": "Piłkarski symulator kariery od lokalnego futbolu — wersja 1.1.",
+  "description": "Piłkarski symulator kariery od lokalnego futbolu — World 1.1.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#070b16",
