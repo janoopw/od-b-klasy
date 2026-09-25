@@ -3,3 +3,5 @@
 - Naprawiono tabelę ligi gracza: przeciwnik dostaje wynik i mecz po rozegraniu meczu gracza.
 - Dodano możliwość odrzucenia zaproszenia na trening testowy.
 - Zachowano wcześniejsze mechaniki.
+
+World 1.8.4: poprawiona pełna symulacja rund/sezonu oraz automatyczne zarządzanie treningiem podczas symulacji.
