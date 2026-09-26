@@ -1,10 +1,10 @@
-# Od B-klasy — World 1.9.7
+# Od B-klasy — World 1.10.0
 
-Nowe w 1.9.7:
-- rozbudowana reprezentacja: osobne powołania i zgrupowania poza terminarzem klubowym;
-- powiadomienie o zgłoszeniu na zgrupowanie i przycisk „Jedź na zgrupowanie”;
-- osobne mecze kadry, przeciwnicy, minuty, gole, asysty i oceny;
-- typy rozgrywek reprezentacyjnych (eliminacje, Liga Narodów, turnieje młodzieżowe, MŚ/EURO);
-- historia zgrupowań i ostatnich meczów reprezentacji;
-- symulacja sezonu obsługuje zgrupowania automatycznie;
-- kompatybilność zapisów z 1.9.6 i starszymi wersjami.
+Nowe w 1.10.0:
+- mecze reprezentacji są rozdzielone od symulacji sezonu klubowego,
+- powołanie podczas automatycznej symulacji zatrzymuje sezon dokładnie po bieżącym meczu klubowym,
+- zgrupowanie reprezentacji ma własny etap zgłoszenia i osobne mecze,
+- każdy mecz kadry rozgrywa się oddzielnie i nie jest automatycznie wliczany do kolejnych meczów klubowych,
+- po zakończeniu zgrupowania można wznowić przerwaną symulację sezonu od tego samego miejsca,
+- zapis zachowuje stan przerwanej symulacji i zgrupowania,
+- zachowano kompatybilność zapisów z wcześniejszych wersji.
