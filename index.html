@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Od B-klasy">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Kariera: Od B-klasy — World 1.9.6</title>
+<title>Kariera: Od B-klasy — World 1.10.3</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:#070b16;color:#edf2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
@@ -49,7 +49,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.9.6</div></header>
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.10.3</div></header>
 
 <div id="create" class="card">
 <h1>Stwórz zawodnika</h1>
@@ -306,12 +306,25 @@ const clubCityAliases={
 };
 function assignPolishClubCities(){clubs.filter(c=>!c.foreign).forEach(c=>{if(c.city)return;const name=c.name;let city="";for(const [key,aliases] of Object.entries(clubCityAliases)){if(aliases.some(a=>name.includes(a))){city=key;break}}if(!city){const exact=polishCities.find(x=>name.includes(x));city=exact||"Inne"}c.city=city;c.region=city;c.country="🇵🇱 Polska";});}
 assignPolishClubCities();
-function startOfferRole(c,ovr,age,tier){const role=roleForClub(c,ovr,age,tier);if(role)return role;if(c.strength<=ovr+22)return {label:"🪑 Rezerwowy",short:"Rezerwowy",minutes:rnd(300,800),fit:"niska"};return null;}
-function generateStartOffers(ovr,age,tier){const maxGap=tier==="generational"?38:tier==="wonderkid"?30:tier==="talented"?23:17;let pool=clubs.filter(c=>c.strength<=ovr+maxGap&&c.strength>=Math.max(38,ovr-18));if(age<=17&&tier==="normal")pool=pool.filter(c=>c.level<domesticLeagues.length||c.strength<=ovr+9);const region=document.getElementById("region")?.value||g?.region||"Warszawa";const nearby=regionNeighbors[region]||[];const local=pool.filter(c=>!c.foreign&&c.city===region);const near=pool.filter(c=>!c.foreign&&nearby.includes(c.city));const rest=pool.filter(c=>c.foreign||(!local.includes(c)&&!near.includes(c)));
- const decorate=c=>{const role=startOfferRole(c,ovr,age,tier);if(!role)return null;return {...c,role:role.label,roleShort:role.short,predictedMinutes:role.minutes,fit:role.fit,bonus:Math.max(50,Math.round(c.salary*.025)),contractYears:age<18?2:3}};
- const take=(arr,n,used)=>{const candidates=[...arr].sort((a,b)=>Math.abs(a.strength-ovr)-Math.abs(b.strength-ovr)+(Math.random()-.5)*5);const out=[];for(const c of candidates){if(out.length>=n)break;if(used.has(c.name+"|"+c.level))continue;const d=decorate(c);if(!d)continue;out.push(d);used.add(c.name+"|"+c.level);}return out};
- const used=new Set(),picked=[...take(local,3,used),...take(near,2,used),...take(rest,1,used)];
- if(picked.length<6){picked.push(...take([...local,...near,...rest],6-picked.length,used));}
+function startOfferRole(c,ovr,age,tier){const d=c.strength-ovr;if(d<=-3)return {label:"⭐ Kluczowy zawodnik",short:"Kluczowy",minutes:rnd(2100,2800),fit:"bardzo wysoka"};if(d<=3)return {label:"🟢 Pierwszy skład",short:"Pierwszy skład",minutes:rnd(1700,2400),fit:"wysoka"};if(d<=9)return {label:"🔄 Rotacja",short:"Rotacja",minutes:rnd(900,1600),fit:"średnia"};if(d<=16)return {label:"🪑 Rezerwowy",short:"Rezerwowy",minutes:rnd(350,950),fit:"niska"};if(age<=18&&(tier!=="normal"||ovr>=55))return {label:"👶 Młody talent",short:"Młody talent",minutes:rnd(250,850),fit:"rozwojowa"};return null}
+function regionalStartRole(c,ovr,age,tier){const d=c.strength-ovr;const base=startOfferRole(c,ovr,age,tier);if(base)return base;if(age<=21&&d<=32)return {label:"👶 Rozwój / młody zawodnik",short:"Rozwój",minutes:rnd(250,850),fit:"rozwojowa"};if(age<=25&&d<=27)return {label:"🪑 Rezerwowy",short:"Rezerwowy",minutes:rnd(250,700),fit:"niska"};return null}
+function generateStartOffers(ovr,age,tier){
+ const maxGap=tier==="generational"?38:tier==="wonderkid"?30:tier==="talented"?23:17;
+ const region=document.getElementById("region")?.value||g?.region||"Warszawa";
+ const nearby=regionNeighbors[region]||[];
+ const polish=clubs.filter(c=>!c.foreign);
+ const local=polish.filter(c=>c.city===region);
+ const near=polish.filter(c=>nearby.includes(c.city));
+ const globalEligible=clubs.filter(c=>c.strength<=ovr+maxGap&&c.strength>=Math.max(38,ovr-18));
+ const rest=globalEligible.filter(c=>c.foreign||(!local.includes(c)&&!near.includes(c)));
+ const decorate=(c,regional=false)=>{const role=regional?regionalStartRole(c,ovr,age,tier):startOfferRole(c,ovr,age,tier);if(!role)return null;return {...c,role:role.label,roleShort:role.short,predictedMinutes:role.minutes,fit:role.fit,bonus:Math.max(50,Math.round(c.salary*.025)),contractYears:age<18?2:3}};
+ const take=(arr,n,used,regional=false)=>{const candidates=[...arr].sort((a,b)=>Math.abs(a.strength-ovr)-Math.abs(b.strength-ovr)+(Math.random()-.5)*5);const out=[];for(const c of candidates){if(out.length>=n)break;if(used.has(c.name+"|"+c.level))continue;const d=decorate(c,regional);if(!d)continue;out.push(d);used.add(c.name+"|"+c.level);}return out};
+ const used=new Set();
+ // Najpierw własne miasto, potem sąsiednie miasta, dopiero później cała Polska/zagranica.
+ const picked=[...take(local,3,used,true),...take(near,2,used,true),...take(rest,1,used,false)];
+ if(picked.length<6)picked.push(...take(globalEligible.filter(c=>!used.has(c.name+"|"+c.level)),6-picked.length,used,false));
+ // Jeśli w wybranym mieście nie ma odpowiedniego klubu na danym poziomie, nie zalewamy ofert Warszawą — pokazujemy najbliższe sensowne lokalnie kluby.
+ if(picked.length<6)picked.push(...take(polish.filter(c=>nearby.includes(c.city)||c.city===region),6-picked.length,used,true));
  return picked.slice(0,6);
 }
 function coachLabel(){return g.coachTrust>=82?"💎 Ulubieniec trenera":g.coachTrust>=65?"🟢 Zaufany":g.coachTrust>=45?"🟡 Obserwowany":"🔴 Pod presją"}
