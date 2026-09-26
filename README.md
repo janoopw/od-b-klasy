@@ -1,4 +1,4 @@
-# Od B-klasy — World 1.10.0
+# Od B-klasy — World 1.10.1
 
 Nowe w 1.10.0:
 - mecze reprezentacji są rozdzielone od symulacji sezonu klubowego,
