@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Od B-klasy">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Kariera: Od B-klasy — World 1.10.5</title>
+<title>Kariera: Od B-klasy — World 1.10.6</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:#070b16;color:#edf2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
@@ -49,7 +49,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.10.5</div></header>
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.10.6</div></header>
 
 <div id="create" class="card">
 <h1>Stwórz zawodnika</h1>
@@ -399,7 +399,7 @@ function createNationalCamp(team,sim=false){const r=ensureRep();const tournament
 function evaluateNationalTeam(force=false,sim=false){if(!g||g.age<14)return;const team=nationalTeamForAge(g.age),r=ensureRep();if(!team)return;if(r.team&&r.team!==team&&!r.camp){r.team=team;r.last=`Awans do ${team}`;if(!sim)log(`🇵🇱 Awansujesz do reprezentacji <b>${team}</b>.`)}const threshold=nationalThreshold(team);const formBonus=(g.form-65)*.12;const leagueBonus=g.academy?0:g.leagueLevel*1.5;const performance=avg()+formBonus+leagueBonus+(g.talentTier==="generational"?4:g.talentTier==="wonderkid"?2:0);const chance=clamp((performance-threshold)*.06,0,.9);const window=([5,11,17,23,29].includes(Number(g.round))||force);if(!r.camp&&!r.pending&&performance>=threshold&&(force||window)&&(Math.random()<(force?.8:chance*.55+.08)))createNationalCamp(team,sim)}
 function reportNationalCamp(sim=false){const r=ensureRep();if(!r.camp)return; if(r.camp.reported)return; r.camp.reported=true;r.pending=true;r.last=`Zgrupowanie ${r.camp.tournament}`;const msg=`📋 <b>Zgłaszasz się na zgrupowanie ${r.camp.team}.</b> Trener kadry oceni Cię podczas najbliższych spotkań.`;if(sim)simEvent(msg.replace(/<[^>]+>/g,""));else log(msg);render()}
 function resumeSeasonAfterNational(){if(!g||!g.simulationPausedForNational||g.simulating)return;g.simulationPausedForNational=false;g.simulating=true;g.simEvents=g.simEvents||[];g.simulationLeagueBefore=simulationProgress().played;log(`▶️ <b>Wracasz do symulacji sezonu.</b> Zgrupowanie reprezentacji zakończone.`);updateSimulationUI(g.simulationMode||"season",g.simulationTarget||simulationProgress().total);setTimeout(()=>simulateSeasonBatch(),0)}
-function playNationalMatch(sim=false){const r=ensureRep();if(!sim&&!g.skipDecision&&!g.pendingDecision&&r.camp?.reported){const item=r.camp.matches[r.camp.index];if(item){beginMatchDecision(item,true);return}}if(!r.camp||!r.camp.reported)return;const item=r.camp.matches[r.camp.index];if(!item)return finishNationalCamp(sim);const team=r.camp.team;const diff=avg()-nationalThreshold(team);const minutes=Math.random()*100<clamp(48+diff*2.5+g.form*.18,18,92)?rnd(55,90):rnd(15,45);const gf=Math.max(0,Math.round(1.25+diff*.035+(Math.random()-.5)*2));const ga=Math.max(0,Math.round(1.05-diff*.025+(Math.random()-.5)*2));let goals=0,assists=0;if(minutes){const gc=g.pos==="Napastnik"?.22:g.pos==="Pomocnik"?.13:g.pos==="Obrońca"?.05:.02;for(let i=0;i<gf;i++)if(Math.random()<gc+(g.shoot-40)*.003)goals++;goals=Math.min(goals,gf);const ac=g.pos==="Pomocnik"?.20:g.pos==="Skrzydłowy"?.18:g.pos==="Napastnik"?.09:g.pos==="Obrońca"?.06:.07;for(let i=0;i<gf;i++)if(Math.random()<ac+(g.pass-40)*.0025)assists++;assists=Math.min(assists,Math.max(0,gf-goals))}const de=g.decisionEffect||{};if(de.success&&de.kind==='shot'&&Math.random()<.42)goals=Math.min(gf,goals+1);if(de.success&&de.kind==='pass'&&Math.random()<.50)assists=Math.min(Math.max(0,gf-goals),assists+1);const rating=minutes?clamp(3.2+(gf-ga)*.16+goals*.42+assists*.20+(de.success?.10:de.kind?.05:-.04)+rnd(-35,35)/250,2.2,5):0;g.rep.caps++;g.rep.goals+=goals;g.rep.assists+=assists;item.played=true;item.result=`${gf}:${ga}`;item.minutes=minutes;item.goals=goals;item.assists=assists;item.rating=+rating.toFixed(2);r.history.unshift({season:g.season,team,opponent:item.opponent,minutes,goals,assists,rating:+rating.toFixed(2),result:`${gf}:${ga}`,tournament:r.camp.tournament});r.history=r.history.slice(0,30);g.morale=clamp(g.morale+(rating>=4?3:rating>=3.5?1:-1),20,100);g.form=clamp(g.form+(rating>=4.2?3:rating<3?-2:1),30,100);g.value=marketValue();g.seasonMatches=(g.seasonMatches||[]);g.seasonMatches.push({round:(g.round||0)+.1+ r.camp.index*.01,competition:`Reprezentacja ${team}`,opp:item.opponent,gf,ga,rating:+rating.toFixed(2),minutes,goals,assists});if(sim)simEvent(`🇵🇱 ${team}: Polska ${gf}:${ga} z ${item.opponent} — ${minutes} min, ${goals} G, ${assists} A.`);else log(`🇵🇱 <b>${team}:</b> Polska ${gf}:${ga} z ${item.opponent} — ${minutes} min, ${goals} goli, ${assists} asyst, ocena ${displayRating(rating,2)}/10.`);r.camp.index++;if(r.camp.index>=r.camp.matches.length)finishNationalCamp(sim);g.decisionEffect=null;render()}
+function playNationalMatch(sim=false){const r=ensureRep();if(!sim&&!g.skipDecision&&!g.pendingDecision&&r.camp?.reported){const item=r.camp.matches[r.camp.index];if(item){beginMatchDecision(item,true);return}}if(!r.camp||!r.camp.reported)return;const item=r.camp.matches[r.camp.index];if(!item)return finishNationalCamp(sim);const team=r.camp.team;const diff=avg()-nationalThreshold(team);const minutes=Math.random()*100<clamp(48+diff*2.5+g.form*.18,18,92)?rnd(55,90):rnd(15,45);const gf=Math.max(0,Math.round(1.25+diff*.035+(Math.random()-.5)*2));let ga=Math.max(0,Math.round(1.05-diff*.025+(Math.random()-.5)*2));const de=g.decisionEffect||{};if(de.goal&&['shot','freekick','penalty'].includes(de.kind))gf++;let goals=0,assists=0;if(minutes){const gc=g.pos==="Napastnik"?.22:g.pos==="Pomocnik"?.13:g.pos==="Obrońca"?.05:.02;for(let i=0;i<gf;i++)if(Math.random()<gc+(g.shoot-40)*.003)goals++;goals=Math.min(goals,gf);const ac=g.pos==="Pomocnik"?.20:g.pos==="Skrzydłowy"?.18:g.pos==="Napastnik"?.09:g.pos==="Obrońca"?.06:.07;for(let i=0;i<gf;i++)if(Math.random()<ac+(g.pass-40)*.0025)assists++;assists=Math.min(assists,Math.max(0,gf-goals))}if(de.goal&&['shot','freekick','penalty'].includes(de.kind))goals=Math.min(gf,Math.max(goals,1));else if(de.success&&['shot','freekick'].includes(de.kind)&&Math.random()<.42)goals=Math.min(gf,goals+1);if(de.success&&de.kind==='pass'&&Math.random()<.50)assists=Math.min(Math.max(0,gf-goals),assists+1);const rating=minutes?clamp(3.2+(gf-ga)*.16+goals*.42+assists*.20+(de.success?.10:de.kind?.05:-.04)+rnd(-35,35)/250,2.2,5):0;g.rep.caps++;g.rep.goals+=goals;g.rep.assists+=assists;item.played=true;item.result=`${gf}:${ga}`;item.minutes=minutes;item.goals=goals;item.assists=assists;item.rating=+rating.toFixed(2);r.history.unshift({season:g.season,team,opponent:item.opponent,minutes,goals,assists,rating:+rating.toFixed(2),result:`${gf}:${ga}`,tournament:r.camp.tournament});r.history=r.history.slice(0,30);g.morale=clamp(g.morale+(rating>=4?3:rating>=3.5?1:-1),20,100);g.form=clamp(g.form+(rating>=4.2?3:rating<3?-2:1),30,100);g.value=marketValue();g.seasonMatches=(g.seasonMatches||[]);g.seasonMatches.push({round:(g.round||0)+.1+ r.camp.index*.01,competition:`Reprezentacja ${team}`,opp:item.opponent,gf,ga,rating:+rating.toFixed(2),minutes,goals,assists});if(sim)simEvent(`🇵🇱 ${team}: Polska ${gf}:${ga} z ${item.opponent} — ${minutes} min, ${goals} G, ${assists} A.`);else log(`🇵🇱 <b>${team}:</b> Polska ${gf}:${ga} z ${item.opponent} — ${minutes} min, ${goals} goli, ${assists} asyst, ocena ${displayRating(rating,2)}/10.`);r.camp.index++;if(r.camp.index>=r.camp.matches.length)finishNationalCamp(sim);g.decisionEffect=null;render()}
 function finishNationalCamp(sim=false){const r=ensureRep();if(!r.camp)return;r.camp.matches=r.camp.matches||[];r.camps[0].status="zakończone";r.pending=false;r.last=`Zakończone zgrupowanie ${r.camp.tournament}`;if(!sim)log(`🇵🇱 <b>Zgrupowanie zakończone.</b> ${r.camp.tournament} — ${r.camp.matches.filter(x=>x.played).length}/${r.camp.matches.length} meczów.`);else simEvent(`🇵🇱 Zakończone zgrupowanie ${r.camp.tournament}.`);r.camp=null;render()}
 function nationalWindowTick(sim=false){if(!g||g.age<14)return;const r=ensureRep();if(r.camp){if(!r.camp.reported&&!sim)reportNationalCamp(false);return}if([5,11,17,23,29].includes(Number(g.round)))evaluateNationalTeam(false,sim)}
 function youthOpponents(age){return ["Akademia Legii","Akademia Lecha","Jagiellonia U"+age,"Widzew U"+age,"ŁKS U"+age,"Polonia U"+age,"Pogoń U"+age,"Raków U"+age,"Wisła U"+age,"Górnik U"+age]}
@@ -457,7 +457,7 @@ function matchContribution(gf,minutes,teamResult=0){
  const roleBase=3.25+(key-50)*.006+(g.form-70)*.004+(g.morale-70)*.002;
  const goalWeight=g.pos==="Napastnik"?.42:g.pos==="Skrzydłowy"?.38:g.pos==="Pomocnik"?.30:g.pos==="Obrońca"?.18:.10;
  const assistWeight=g.pos==="Pomocnik"?.24:g.pos==="Skrzydłowy"?.22:g.pos==="Napastnik"?.14:g.pos==="Obrońca"?.12:.08;
- const de=g.decisionEffect||{}; if(de.success&&de.kind==='shot'&&Math.random()<.38)goals=Math.min(gf,goals+1); if(de.success&&de.kind==='pass'&&Math.random()<.48)assists=Math.min(Math.max(0,gf-goals),assists+1); const rating=clamp(roleBase+teamResult*.16+goals*goalWeight+assists*assistWeight+(de.success?.10:de.kind?.05:-.05)+(minutes>=75?.08:minutes>=45?0:-.12)+(Math.random()-.5)*.36,1.8,5);
+ const de=g.decisionEffect||{}; if(de.goal&&['shot','freekick','penalty'].includes(de.kind))goals=Math.min(gf,Math.max(goals,1)); else if(de.success&&['shot','freekick'].includes(de.kind)&&Math.random()<.38)goals=Math.min(gf,goals+1); if(de.success&&de.kind==='pass'&&Math.random()<.48)assists=Math.min(Math.max(0,gf-goals),assists+1); const rating=clamp(roleBase+teamResult*.16+goals*goalWeight+assists*assistWeight+(de.success?.10:de.kind?.05:-.05)+(minutes>=75?.08:minutes>=45?0:-.12)+(Math.random()-.5)*.36,1.8,5);
  return {goals,assists,rating};
 }
 function applyMatchStats(out,minutes){
@@ -476,43 +476,82 @@ function applyMatchStats(out,minutes){
  g.condition=clamp(g.condition-(minutes?clamp(Math.round(minutes*.15)+rnd(2,5),7,20):rnd(1,4)),0,100);g.trainingCount=0;
 }
 function decisionScenario(m){
- const minute=rnd(12,88), score=(()=>{const d=rnd(-1,1);return d>0?'prowadzimy':d<0?'przegrywamy':'remis'})();
- const pos=g.pos;
- if(pos==='Napastnik'||pos==='Skrzydłowy'){
-  const pool=[
-   {title:'⚡ Strzelam siłowo',desc:'Szybki strzał bez przyjęcia.',kind:'shot',power:.16,risk:.10},
-   {title:'🎯 Uderzam technicznie przy słupku',desc:'Mniej siły, więcej precyzji.',kind:'shot',power:.12,risk:.04},
-   {title:'🤝 Podaję do lepiej ustawionego kolegi',desc:'Próbujesz stworzyć sytuację bramkową.',kind:'pass',power:.07,risk:-.02},
-   {title:'🕺 Biorę obrońcę na drybling',desc:'Ryzykujesz stratę, ale możesz wejść w pole karne.',kind:'dribble',power:.10,risk:.08}
-  ];
-  return {minute,score,text:`Piłka spada przed Tobą na około 5. metrze. ${score==='prowadzimy'?'Mamy przewagę — możesz zagrać spokojniej.':score==='przegrywamy'?'Trzeba szukać bramki.':'Mecz jest na styku.'}`,options:pool};
+ const minute=rnd(8,90), d=rnd(-1,1), score=d>0?'prowadzimy':d<0?'przegrywamy':'remis';
+ const pos=g.pos, comp=m?.competition||g.pendingDecision?.competition||'Liga';
+ const pressure=minute>=78?'Końcówka meczu — decyzja może mieć duże znaczenie.':score==='przegrywamy'?'Przegrywamy i trzeba coś stworzyć.':score==='prowadzimy'?'Prowadzimy — możesz zagrać bezpieczniej.':'Mecz jest na styku.';
+ const common=(text,options)=>({minute,score,text:`${text} ${pressure}`,options});
+ if(pos==='Bramkarz'){
+  const pools=[
+   common('Rywal wychodzi sam na sam. Skraca dystans i zaraz odda strzał.',[
+    {title:'🧤 Czekam do końca',desc:'Nie rzucasz się za wcześnie.',kind:'save',power:.15,risk:.04},
+    {title:'🏃 Wybiegam pod nogi',desc:'Próbujesz skrócić kąt.',kind:'save',power:.12,risk:.10},
+    {title:'🧱 Zostaję na linii',desc:'Licząc na refleks i ustawienie.',kind:'save',power:.08,risk:-.03}
+   ]),
+   common('Dośrodkowanie spada w pole bramkowe, a napastnik jest blisko.',[
+    {title:'✋ Wychodzę i piąstkuję',desc:'Ryzyko błędu, ale możesz wyjaśnić sytuację.',kind:'save',power:.13,risk:.08},
+    {title:'🧤 Łapię piłkę',desc:'Próba pewnego chwytu.',kind:'save',power:.10,risk:.02},
+    {title:'🧠 Zostaję na pozycji',desc:'Licząc na obrońców.',kind:'safe',power:.05,risk:-.04}
+   ])
+  ]; return pools[rnd(0,pools.length-1)];
  }
- if(pos==='Pomocnik') return {minute,score,text:`Odbierasz piłkę około 25 metrów od bramki. Przeciwnik cofa się, ale masz chwilę na decyzję.`,options:[
-  {title:'🎯 Prostopadłe podanie',desc:'Próba otwarcia obrony jednym zagraniem.',kind:'pass',power:.12,risk:.05},
-  {title:'🚀 Strzał z dystansu',desc:'Ryzykujesz, ale możesz zaskoczyć bramkarza.',kind:'shot',power:.08,risk:.10},
-  {title:'🔄 Utrzymuję piłkę i zmieniam stronę',desc:'Bezpieczna decyzja, budujesz akcję od nowa.',kind:'safe',power:.04,risk:-.05},
-  {title:'🕺 Wchodzę w pojedynek 1 na 1',desc:'Próba minięcia pierwszego rywala.',kind:'dribble',power:.09,risk:.08}
- ]};
- return {minute,score,text:`Rywal wychodzi z kontrą, a Ty jesteś najbliżej akcji. Co robisz?`,options:[
-  {title:'🛡️ Wślizg / agresywny odbiór',desc:'Próbujesz zatrzymać akcję natychmiast.',kind:'defend',power:.12,risk:.12},
-  {title:'🧠 Ustawiam się i blokuję podanie',desc:'Czytasz akcję zamiast rzucać się do odbioru.',kind:'safe',power:.07,risk:-.05},
-  {title:'⚡ Idę na raz',desc:'Szybki odbiór albo faul.',kind:'defend',power:.09,risk:.16}
- ]};
+ if((pos==='Napastnik'||pos==='Skrzydłowy') && Math.random()<.16) return common('Sędzia dyktuje rzut karny. Piłka leży na jedenastym metrze.',[
+   {title:'🎯 Uderzam po ziemi przy słupku',desc:'Precyzja ponad siłę.',kind:'penalty',power:.17,risk:.02},
+   {title:'💥 Ładuję pod poprzeczkę',desc:'Duża siła, mały margines błędu.',kind:'penalty',power:.20,risk:.10},
+   {title:'🧊 Panenka',desc:'Odważna podcinka środkiem.',kind:'penalty',power:.10,risk:.18}
+ ]);
+ if((pos==='Pomocnik'||pos==='Napastnik'||pos==='Skrzydłowy') && Math.random()<.18) return common('Rzut wolny z około 20 metrów. Bramkarz ustawia mur.',[
+   {title:'🎯 Zakładam rotację nad murem',desc:'Techniczne uderzenie w kierunku okienka.',kind:'freekick',power:.17,risk:.05},
+   {title:'💥 Uderzam siłowo',desc:'Próba przebicia muru.',kind:'freekick',power:.13,risk:.11},
+   {title:'🤝 Rozgrywam krótko',desc:'Zamiast strzału uruchamiasz partnera.',kind:'pass',power:.11,risk:-.02}
+ ]);
+ if((pos==='Napastnik'||pos==='Skrzydłowy') && Math.random()<.24) return common('Dośrodkowanie trafia w pole karne. Piłka spada kilka metrów przed Tobą.',[
+   {title:'⚡ Wolej z pierwszej piłki',desc:'Nie dajesz obrońcy czasu na reakcję.',kind:'shot',power:.15,risk:.10},
+   {title:'🧠 Przyjmuję i mijam obrońcę',desc:'Chcesz poprawić pozycję przed strzałem.',kind:'dribble',power:.12,risk:.07},
+   {title:'🤝 Zgrywam do partnera',desc:'Próbujesz przygotować jeszcze lepszą okazję.',kind:'pass',power:.10,risk:-.01}
+ ]);
+ if(pos==='Pomocnik') return common('Masz piłkę na 25 metrze. Skrzydłowy rusza za linię obrony.',[
+   {title:'🧵 Prostopadłe podanie',desc:'Idealnie w tempo może otworzyć drogę do bramki.',kind:'pass',power:.16,risk:.07},
+   {title:'🚀 Strzał z dystansu',desc:'Bramkarz jest lekko wysunięty.',kind:'shot',power:.10,risk:.09},
+   {title:'🔄 Zmieniam stronę',desc:'Spokojniejsza decyzja i utrzymanie posiadania.',kind:'safe',power:.06,risk:-.06},
+   {title:'🕺 Wchodzę 1 na 1',desc:'Próba złamania linii pomocy.',kind:'dribble',power:.11,risk:.08}
+ ]);
+ if(pos==='Obrońca') return common('Rywal wychodzi z kontrą. Napastnik ma pół metra przewagi.',[
+   {title:'🛡️ Agresywny odbiór',desc:'Próbujesz zatrzymać akcję natychmiast.',kind:'defend',power:.15,risk:.12},
+   {title:'🧠 Cofam się i zamykam kąt',desc:'Nie dajesz się minąć.',kind:'safe',power:.10,risk:-.04},
+   {title:'⚡ Wślizg od tyłu',desc:'Bardzo ryzykowna próba ratowania sytuacji.',kind:'defend',power:.13,risk:.20}
+ ]);
+ return common('Piłka odbija się na skraju pola karnego i masz chwilę na decyzję.',[
+  {title:'🎯 Strzał techniczny',desc:'Szukasz dalszego słupka.',kind:'shot',power:.13,risk:.05},
+  {title:'💥 Strzał siłowy',desc:'Szybka próba bez przyjęcia.',kind:'shot',power:.12,risk:.10},
+  {title:'🤝 Podaję do lepiej ustawionego kolegi',desc:'Możesz stworzyć asystę.',kind:'pass',power:.10,risk:.01},
+  {title:'🕺 Drybling',desc:'Ryzykujesz stratę, ale możesz wejść w pole karne.',kind:'dribble',power:.11,risk:.08}
+ ]);
+}
+function decisionReaction(kind,success,goal){
+ let morale=0,trust=0,msg='';
+ if(goal){morale+=5;trust+=5;msg='🔥 Szatnia eksploduje z radości! Trener jest zachwycony Twoją decyzją.'}
+ else if(success){morale+=2;trust+=2;msg='👏 Koledzy doceniają zagranie, a trener kiwa głową z uznaniem.'}
+ else {morale-=3;trust-=3;msg='😤 Trener jest niezadowolony z decyzji. W szatni pada kilka ostrych słów.'}
+ g.morale=clamp(g.morale+morale,20,100);g.coachTrust=clamp(g.coachTrust+trust,15,100);return msg;
 }
 function beginMatchDecision(m,national=false){
  const sc=decisionScenario(m||{});g.pendingDecision={national,competition:national?`Reprezentacja ${g.rep?.team||'Polska'}`:(m.competition||'Liga'),scenario:sc,fixtureRound:m?.round||null,opponent:m?.opponent||'rywal'};
  const opts=sc.options.map((o,i)=>`<button class="decisionOption" onclick="resolveMatchDecision(${i})"><b>${o.title}</b><small>${o.desc}</small></button>`).join('');
- openModal(`<h2>⚽ Decyzja boiskowa — ${sc.minute}'</h2><div class="decisionCard"><b>${sc.text}</b><div class="rowSub" style="margin-top:8px">Twoja pozycja: ${esc(g.pos)} • ${esc(g.pendingDecision.competition)}</div></div><h3 style="margin:14px 0 6px">Co robisz?</h3>${opts}<div class="muted" style="margin-top:8px">Twoja decyzja wpłynie na przebieg akcji, ocenę i szansę na udział przy bramce.</div>`);
+ openModal(`<h2>⚽ Decyzja boiskowa — ${sc.minute}'</h2><div class="decisionCard"><b>${sc.text}</b><div class="rowSub" style="margin-top:8px">Twoja pozycja: ${esc(g.pos)} • ${esc(g.pendingDecision.competition)}</div></div><h3 style="margin:14px 0 6px">Co robisz?</h3>${opts}<div class="muted" style="margin-top:8px">Decyzja wpływa na akcję, statystyki, ocenę, morale i zaufanie trenera.</div>`);
 }
 function resolveMatchDecision(i){
  const pd=g.pendingDecision;if(!pd)return;const o=pd.scenario.options[i];if(!o)return;
- const skill=o.kind==='shot'?g.shoot:o.kind==='pass'?g.pass:o.kind==='dribble'?g.drib:g.def;
- const success=clamp(.38+(skill-50)*.006+o.power+(g.form-70)*.0025+(g.morale-70)*.0015-o.risk, .08,.92);
- const won=Math.random()<success;
- g.decisionEffect={kind:o.kind,success:won,power:o.power,risk:o.risk};
- g.lastDecision={text:o.title,success:won,minute:pd.scenario.minute};
- g.pendingDecision=null;closeModal();log(`${won?'🟢':'🔴'} <b>Decyzja boiskowa:</b> ${o.title} — ${won?'akcja się udała.':'akcja nie wyszła.'}`);
- if(pd.national)playNationalMatch(false);else {g.skipDecision=true;playMatch();g.skipDecision=false;}
+ const skill=['shot','freekick','penalty'].includes(o.kind)?g.shoot:o.kind==='pass'?g.pass:o.kind==='dribble'?g.drib:o.kind==='save'?g.def:g.def;
+ const base=.36+(skill-50)*.006+o.power+(g.form-70)*.0025+(g.morale-70)*.0015-o.risk;
+ const won=Math.random()<clamp(base,.08,.92);
+ const goalChance=o.kind==='penalty'?clamp(.62+(skill-50)*.008+(g.form-70)*.002,.28,.94):o.kind==='freekick'?clamp(.10+(skill-50)*.004,.04,.35):o.kind==='shot'?clamp(.18+(skill-50)*.004+(g.form-70)*.0015,.06,.45):0;
+ const goal=won&&Math.random()<goalChance;
+ g.decisionEffect={kind:o.kind,success:won,goal,goalChance};
+ g.lastDecision={text:o.title,success:won,goal,minute:pd.scenario.minute};
+ const reaction=decisionReaction(o.kind,won,goal);g.pendingDecision=null;closeModal();
+ const result=goal?`⚽ <b>GOOOL!</b> ${o.title}`:won?`🟢 <b>Udana akcja:</b> ${o.title}`:`🔴 <b>Niewykorzystana sytuacja:</b> ${o.title}`;
+ log(`${result} — ${reaction}`);
+ if(pd.national){g.skipDecision=true;playNationalMatch(false);g.skipDecision=false}else{g.skipDecision=true;playMatch();g.skipDecision=false}
 }
 function footballTrivia(){
  const facts=[
@@ -533,7 +572,8 @@ function playMatch(){
  const minutes=starts?rnd(65,90):rnd(0,35);
  const expected=clamp(1.15+(g.club.strength-opponent.strength+(m.home?3:0))*.07,.25,2.6);
  const gf=Math.max(0,Math.round(expected+(Math.random()-.5)*2));
- const ga=Math.max(0,Math.round(1.15-(g.club.strength-opponent.strength+(m.home?3:0))*.05+(Math.random()-.5)*2));
+ let ga=Math.max(0,Math.round(1.15-(g.club.strength-opponent.strength+(m.home?3:0))*.05+(Math.random()-.5)*2));
+ const de=g.decisionEffect||{}; if(de.goal&&['shot','freekick','penalty'].includes(de.kind))gf++;
  const out=matchContribution(gf,minutes,gf>ga?1:gf===ga?0:-1);
  const goals=out.goals,assists=out.assists,rating=out.rating;
  m.played=true;m.goalsFor=gf;m.goalsAgainst=ga;m.performance=minutes?rating.toFixed(1):"—";
