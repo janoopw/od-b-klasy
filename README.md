@@ -1,3 +1,3 @@
-Od B-klasy — World 1.10.6
+# Od B-klasy — World 1.10.7
 
-Nowe: interaktywne decyzje boiskowe podczas ręcznie rozgrywanych meczów ligowych, pucharowych, europejskich i reprezentacyjnych. Decyzje zależą od pozycji i wpływają na akcję, ocenę oraz udział przy golach. Dodano też okazjonalne smaczki z historii piłki. Zachowano wcześniejsze systemy i kompatybilność zapisów.
+Poprawki: decyzje meczowe pokazują wynik bezpośrednio na ekranie, nie blokują następnego meczu; usunięto panel Pucharu Polski z zakładki Więcej; tabela pokazuje puchary klubu i status także po odpadnięciu; poprawiono zapis 1.10.7.
