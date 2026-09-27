@@ -1,10 +1,3 @@
-# Od B-klasy — World 1.10.2
+# Od B-klasy — World 1.10.4
 
-Nowe w 1.10.0:
-- mecze reprezentacji są rozdzielone od symulacji sezonu klubowego,
-- powołanie podczas automatycznej symulacji zatrzymuje sezon dokładnie po bieżącym meczu klubowym,
-- zgrupowanie reprezentacji ma własny etap zgłoszenia i osobne mecze,
-- każdy mecz kadry rozgrywa się oddzielnie i nie jest automatycznie wliczany do kolejnych meczów klubowych,
-- po zakończeniu zgrupowania można wznowić przerwaną symulację sezonu od tego samego miejsca,
-- zapis zachowuje stan przerwanej symulacji i zgrupowania,
-- zachowano kompatybilność zapisów z wcześniejszych wersji.
+Nowe: europejskie puchary mają rzeczywiste daty i są wplecione chronologicznie w sezon; terminarz pokazuje daty. Status zawodnika w klubie zmienia się dynamicznie na podstawie zaufania, formy, minut i udziału w podstawowym składzie. Zachowano wcześniejsze systemy i kompatybilność zapisów.
