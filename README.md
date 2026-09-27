@@ -1,3 +1,3 @@
-# Od B-klasy — World 1.10.7
+# Od B-klasy — World 1.10.8
 
-Poprawki: decyzje meczowe pokazują wynik bezpośrednio na ekranie, nie blokują następnego meczu; usunięto panel Pucharu Polski z zakładki Więcej; tabela pokazuje puchary klubu i status także po odpadnięciu; poprawiono zapis 1.10.7.
+Poprawka zawieszania symulacji w kolejnych sezonach: tryb „Cały sezon” uwzględnia wszystkie mecze zapisane w terminarzu (liga, puchar i europejskie), a postęp symulacji jest liczony osobno dla właściwego trybu. Dodano migrację zapisu z 1.10.7.

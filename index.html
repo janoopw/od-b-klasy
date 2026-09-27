@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Od B-klasy">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Kariera: Od B-klasy — World 1.10.6</title>
+<title>Kariera: Od B-klasy — World 1.10.8</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:#070b16;color:#edf2ff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
@@ -49,7 +49,7 @@ h1,h2,h3{letter-spacing:-.4px}h2{margin-top:3px}
 </head>
 <body>
 <div class="wrap">
-<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.10.6</div></header>
+<header><div class="logo">⚽ Kariera: Od B-klasy</div><div class="muted" id="seasonHead">World 1.10.8</div></header>
 
 <div id="create" class="card">
 <h1>Stwórz zawodnika</h1>
@@ -605,7 +605,13 @@ function playMatch(){
  if(g.schedule.every(x=>x.played))showSeasonButton();g.decisionEffect=null;maybeFootballTrivia();render();
 }
 function simulationLeagueFixtures(){return g.academy?(g.schedule||[]):(g.schedule||[]).filter(x=>x.competition==="Liga")}
-function simulationProgress(){const f=simulationLeagueFixtures();const played=f.filter(x=>x.played).length;return {total:f.length,played,half:Math.ceil(f.length/2)}}
+function simulationFixturesForMode(mode){
+  const all=g.schedule||[];
+  if(g.academy)return all;
+  if(mode==="season")return all;
+  return all.filter(x=>x.competition==="Liga");
+}
+function simulationProgress(mode=g.simulationMode||"season"){const f=simulationFixturesForMode(mode);const played=f.filter(x=>x.played).length;return {total:f.length,played,half:Math.ceil(f.filter(x=>x.competition==="Liga").length/2)}}
 function simulationPreparation(){
   // Tryby rundy/sezon prowadzą trening automatycznie. W trybie mecz po meczu nic tu nie jest wywoływane.
   if(g.injury){g.injury.days-=7;if(g.injury.days<=0){g.injury=null;g.form=clamp(g.form+2,0,100);g.condition=clamp(g.condition+18,0,100);simEvent("🩺 Powrót po kontuzji.")}else{g.condition=clamp(g.condition+10,0,100)}}
@@ -621,7 +627,7 @@ function simulationPreparation(){
 }
 function simulationLabel(mode){return mode==="autumn"?"rundy jesiennej":mode==="spring"?"rundy wiosennej":"całego sezonu"}
 function updateSimulationUI(mode,target){
-  const p=simulationProgress();
+  const p=simulationProgress(mode);
   const status=document.getElementById("simStatus");
   const actions=document.getElementById("simActions");
   if(status)status.innerHTML=`⏳ <b>Symulacja ${simulationLabel(mode)}</b> — ${p.played}/${p.total} meczów ligowych...`;
@@ -629,7 +635,7 @@ function updateSimulationUI(mode,target){
 }
 function simulateSeasonPart(mode){
   if(!g||!g.schedule?.length||g.simulating)return;
-  const p=simulationProgress();
+  const p=simulationProgress(mode);
   if(mode==="autumn"&&p.played>=p.half){log("🍂 Runda jesienna jest już zasymulowana.");return}
   if(mode==="spring"&&p.played<p.half){log("🌱 Najpierw zakończ rundę jesienną albo zasymuluj ją automatycznie.");return}
   if(mode==="season"&&g.schedule.every(x=>x.played)){finishSeason();return}
@@ -656,7 +662,7 @@ function simulateSeasonBatch(){
   const mode=g.simulationMode,target=g.simulationTarget;
   let steps=0;
   while(steps<3&&g&&g.simulating){
-    const prog=simulationProgress();
+    const prog=simulationProgress(mode);
     if(mode!=="season"&&prog.played>=target)break;
     const m=currentMatch();
     if(!m)break;
@@ -676,12 +682,12 @@ function simulateSeasonBatch(){
       openModal(`<h2>🇵🇱 Powołanie do reprezentacji</h2><p><b>Symulacja sezonu została zatrzymana.</b> Zostałeś powołany na zgrupowanie reprezentacji. Przejdź do zakładki <b>Reprezentacja</b>, zgłoś się na zgrupowanie i rozegraj mecze kadry osobno.</p><div class="actions"><button onclick="closeModal();go('more');render()">🇵🇱 Przejdź do reprezentacji</button></div>`);
       return;
     }
-    const after=simulationProgress().played;
+    const after=simulationProgress(mode).played;
     if(after===before&&m.played===false){
       simulationFallbackFixture(m);
     }
   }
-  const p=simulationProgress();
+  const p=simulationProgress(mode);
   const noCurrent=!currentMatch();
   const done=mode!=="season"?p.played>=target:(g.schedule||[]).length>0&&g.schedule.every(x=>x.played);
   if(done||(noCurrent&&p.played>=target)){
@@ -812,8 +818,8 @@ function renderFinance(){g.value=marketValue();document.getElementById("finance"
 function renderContract(){const months=Math.max(0,Number(g.contractMonths||0));document.getElementById("contractInfo").innerHTML=`<div class="row"><div>Typ</div><b>${g.contractType==="junior"?"Kontrakt juniorski":"Kontrakt seniorski"}</b></div><div class="row"><div>Pozostało</div><b>${months?`${Math.ceil(months/12)} lat`:`Wygasł`}</b></div><div class="row"><div>Pensja</div><b>${money(g.club?.salary||0)} zł/mies.</b></div>${months<=12&&!g.academy?`<div class="notice" style="margin-top:8px">📄 Kontrakt kończy się wkrótce. Po sezonie możesz dostać propozycję przedłużenia.</div>`:""}`}
 function renderInjury(){document.getElementById("injuryInfo").innerHTML=g.injury?`<div class="notice">🏥 ${g.injury.type} kontuzja • około <b>${g.injury.days} dni</b> przerwy.</div>`:`<div class="notice">🟢 Zdrowy. Brak aktywnej kontuzji.</div>`}
 function renderForm(){const el=document.getElementById("formList");el.innerHTML=g.history.length?g.history.slice(0,5).map(x=>`<div class="row"><div>${x.gf}:${x.ga} vs ${esc(x.opp)}<div class="rowSub">${x.minutes} min • ⚽ ${x.goals} • 🅰️ ${x.assists}</div></div><b>${displayRating(x.rating)}/10</b></div>`).join(""):"<p class='muted'>Jeszcze nie rozegrałeś meczu.</p>";renderContract();renderInjury()}
-function saveGame(){localStorage.setItem("odBKlasy1106",JSON.stringify(g));log("💾 Zapisano karierę.")}
-function loadGame(){const x=localStorage.getItem("odBKlasy1106")||localStorage.getItem("odBKlasy1105")||localStorage.getItem("odBKlasy1104")||localStorage.getItem("odBKlasy198")||localStorage.getItem("odBKlasy197")||localStorage.getItem("odBKlasy1104")||localStorage.getItem("odBKlasy195")||localStorage.getItem("odBKlasy194")||localStorage.getItem("odBKlasy193")||localStorage.getItem("odBKlasy192")||localStorage.getItem("odBKlasy191")||localStorage.getItem("odBKlasy189")||localStorage.getItem("odBKlasy188")||localStorage.getItem("odBKlasy187")||localStorage.getItem("odBKlasy186")||localStorage.getItem("odBKlasy185")||localStorage.getItem("odBKlasy184")||localStorage.getItem("odBKlasy183")||localStorage.getItem("odBKlasy18")||localStorage.getItem("odBKlasy17")||localStorage.getItem("odBKlasy16")||localStorage.getItem("odBKlasy15")||localStorage.getItem("odBKlasy13")||localStorage.getItem("odBKlasy12")||localStorage.getItem("odBKlasy08")||localStorage.getItem("odBKlasy07")||localStorage.getItem("odBKlasy061")||localStorage.getItem("odBKlasy06")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03");if(!x){alert("Nie ma zapisu.");return}g=JSON.parse(x);g.simulating=false;g.simulationMode=g.simulationMode||null;g.simulationTarget=g.simulationTarget||null;g.simulationFixtures=g.simulationFixtures||0;g.simulationPausedForNational=!!g.simulationPausedForNational;g.leagueLevel=clamp(Number(g.leagueLevel??0),0,allLeagues.length-1);g.club=getClubData(g.club?.name,g.leagueLevel);g.condition=g.condition??100;g.trainingCount=clamp(Number(g.trainingCount??0),0,2);g.morale=clamp(Number(g.morale??72),0,100);g.coachTrust=clamp(Number(g.coachTrust??45),0,100);
+function saveGame(){localStorage.setItem("odBKlasy1108",JSON.stringify(g));log("💾 Zapisano karierę.")}
+function loadGame(){const x=localStorage.getItem("odBKlasy1108")||localStorage.getItem("odBKlasy1107")||localStorage.getItem("odBKlasy1105")||localStorage.getItem("odBKlasy1104")||localStorage.getItem("odBKlasy198")||localStorage.getItem("odBKlasy197")||localStorage.getItem("odBKlasy1104")||localStorage.getItem("odBKlasy195")||localStorage.getItem("odBKlasy194")||localStorage.getItem("odBKlasy193")||localStorage.getItem("odBKlasy192")||localStorage.getItem("odBKlasy191")||localStorage.getItem("odBKlasy189")||localStorage.getItem("odBKlasy188")||localStorage.getItem("odBKlasy187")||localStorage.getItem("odBKlasy186")||localStorage.getItem("odBKlasy185")||localStorage.getItem("odBKlasy184")||localStorage.getItem("odBKlasy183")||localStorage.getItem("odBKlasy18")||localStorage.getItem("odBKlasy17")||localStorage.getItem("odBKlasy16")||localStorage.getItem("odBKlasy15")||localStorage.getItem("odBKlasy13")||localStorage.getItem("odBKlasy12")||localStorage.getItem("odBKlasy08")||localStorage.getItem("odBKlasy07")||localStorage.getItem("odBKlasy061")||localStorage.getItem("odBKlasy06")||localStorage.getItem("odBKlasy05")||localStorage.getItem("odBKlasy04")||localStorage.getItem("odBKlasy03");if(!x){alert("Nie ma zapisu.");return}g=JSON.parse(x);g.simulating=false;g.simulationMode=g.simulationMode||null;g.simulationTarget=g.simulationTarget||null;g.simulationFixtures=g.simulationFixtures||0;g.simulationPausedForNational=!!g.simulationPausedForNational;g.leagueLevel=clamp(Number(g.leagueLevel??0),0,allLeagues.length-1);g.club=getClubData(g.club?.name,g.leagueLevel);g.condition=g.condition??100;g.trainingCount=clamp(Number(g.trainingCount??0),0,2);g.morale=clamp(Number(g.morale??72),0,100);g.coachTrust=clamp(Number(g.coachTrust??45),0,100);
  if(!g.balance195){const sm=(g.seasonMatches||[]).filter(x=>x.competition==="Liga");const wins=sm.filter(x=>x.gf>x.ga).length,draws=sm.filter(x=>x.gf===x.ga).length;const played=sm.length;const winRate=played?(wins+draws*.5)/played:.5;if(g.morale<25)g.morale=clamp(Math.round(48+winRate*32+(g.form-70)*.18),35,82);if(g.coachTrust<20)g.coachTrust=clamp(Math.round(38+winRate*22+(g.minutes>900?10:g.minutes>500?5:0)),25,72);g.balance195=true}
  g.careerHistory=g.careerHistory??[];g.careerEvents=g.careerEvents??[];g.cupHistory=g.cupHistory??[];g.cup=g.cup??null;g.euroCompetition=g.euroCompetition??null;g.euroStartStage=g.euroStartStage??(g.europe?.stage||"Q2");g.europe=g.europe??null;g.talentTier=g.talentTier??"normal";g.injury=g.injury??null;g.interests=g.interests??[];g.offers=g.offers??[];g.loans=g.loans??[];g.loan=g.loan??null;g.contractType=g.contractType??(g.age<18?"junior":"senior");g.contractBonus=g.contractBonus??0;g.pendingStartOffers=g.pendingStartOffers??[];g.rep=g.rep??{team:null,caps:0,goals:0,assists:0,callups:0,pending:false,history:[],camps:[],tournaments:[],camp:null,last:null};g.rep.camps=g.rep.camps||[];g.rep.tournaments=g.rep.tournaments||[];g.rep.history=g.rep.history||[];g.rep.camp=g.rep.camp||null;g.rep.last=g.rep.last||null;if(g.rep.pending&&!g.rep.camp&&g.rep.team){createNationalCamp(g.rep.team,true)}g.academy=!!g.academy;g.simMode=g.simMode||"match";g.simEvents=g.simEvents||[];g.pendingSeasonOffers=g.pendingSeasonOffers||[];g.pendingRenewalOffer=g.pendingRenewalOffer||null;g.seasonEndReport=g.seasonEndReport||"";g.seasonMatches=g.seasonMatches||[];g.developmentFactor=Number(g.developmentFactor||1);g.developmentLabel=g.developmentLabel||"🟡 Standardowy";g.developmentForeign=!!g.developmentForeign;g.startRole=g.startRole||"🪑 Rezerwowy";if(g.club&&!g.academy){setDevelopmentContext(g.club,g.predictedMinutes||1200)}
  if(g.seasonEndReport.includes("0. miejsce")){const oldTable=[...(g.world?.[g.leagueLevel]?.table||[])];const oldMe=oldTable.find(x=>x.name===g.club?.name);if(oldMe){oldTable.sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga));const fixedPos=Math.max(1,oldTable.findIndex(x=>x.name===g.club.name)+1);g.seasonEndReport=g.seasonEndReport.replace("0. miejsce",`${fixedPos}. miejsce`)}else if(g.seasonEndReport.includes("AWANS")){g.seasonEndReport=g.seasonEndReport.replace("0. miejsce","miejsce premiowane awansem")}}if(g.academy&&!g.schedule?.length)makeYouthSchedule();if(!g.world&&!g.academy){initWorld()}if(!g.cup&&!g.academy){initCup()}if(g.euroCompetition&&!g.europe&&!g.academy){initEurope()}if(!g.academy&&!g.schedule?.some(x=>x.competition==="Liga"))makeSchedule();if(!g.academy&&(!g.world||!g.world[g.leagueLevel]))initWorld();if(!g.academy){
